@@ -20,7 +20,7 @@ using the Linux user space support provided in the sys file
 system in the form of IO classes similar in style to the Python
 file type (or various file IO types in Python 3).
 
-Pin ids : modeule pinid
+Pin ids : module pinid
 ------------------------
 
 GPIO lines are identified by integer pin id values rather than
@@ -32,8 +32,8 @@ the pins on the Raspberry Pi's P1 26 pin header connector.
 Single GPIO pin IO : module pin
 -------------------------------
 
-The main GPIO types and functions are defined in the *pin*
-module.
+The main GPIO types and functions dealing with IO for single
+GPIO pins are defined in the *pin* module.
 
 The *open_pin* function is similar in style to the Python
 built in open function for files et al. It takes a pin id value
