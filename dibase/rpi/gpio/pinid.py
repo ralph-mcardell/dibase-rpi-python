@@ -25,7 +25,7 @@
 '''
 from gpioerror import PinIdInvalidError
 
-class _PinIdValidator(object):
+class PinIdValidator(object):
     '''
         Unary predicate functor type.
 
