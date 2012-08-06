@@ -282,7 +282,7 @@ class _PinIOBase(object):
 
         # open value 'file' for reading/writing depending on direction mode
         self.__value_file = open( Paths.value_path(pin_id)\
-                                        , direction_mode.open_mode_value()
+                                        , direction_mode.open_mode_value()+'b'
                                         )
 
     def __del__(self):
@@ -398,7 +398,11 @@ class PinReader(_PinIOBase, GPIOReaderBase):
        '''
         if self.closed():
             raise ValueError
+
+        # reset any previously latched input value and rewind to file start
+        self._value_file().read()
         self._value_file().seek(0)
+
         return self._value_file().read(1) == '1'
 
 class PinWaitableReader(_PinIOBase, GPIOWaitableReaderBase):
@@ -458,9 +462,11 @@ class PinWaitableReader(_PinIOBase, GPIOWaitableReaderBase):
             if changed == ([], [], []): # Triple of empty lists=>call timed-out
                 return None
             else:
+                self.read()  # grab value: will latch until reset
                 return self
         else:
             changed = select.select( [], [], [self] )
+            self.read()  # grab value: will latch until reset
             return self
 
     def reset( self ):
