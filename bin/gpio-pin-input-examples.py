@@ -99,13 +99,13 @@ def wait_long_pause_read_multiple():
 if __name__ == '__main__':
     try:
         wait_long_pause_read_multiple()
-#        wait_rising_edge_GPIO_GCLK_input_no_timeout()
-#        poll_GPIO_GCLK_input()
-#        wait_both_GPIO_GCLK_input_no_timeout()
-#        wait_both_GPIO_GCLK_input_with_timeouts()
+        wait_rising_edge_GPIO_GCLK_input_no_timeout()
+        poll_GPIO_GCLK_input()
+        wait_both_GPIO_GCLK_input_no_timeout()
+        wait_both_GPIO_GCLK_input_with_timeouts()
     except error.GPIOError:
         print "Oops unexpected GPIO related error!"
     except ValueError:
        print "Oops unexpected value error!"
-#    except Exception:
-#        print "Oops really unexpected error of unanticipated error type!"
+    except Exception:
+        print "Oops really unexpected error of unanticipated error type!"
