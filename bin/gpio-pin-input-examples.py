@@ -80,17 +80,17 @@ def wait_rising_edge_GPIO_GCLK_input_no_timeout():
         print "High thrice"
         print "P1 GPIO_GCLK gone high 3 times"
 
-def wait_long_pause_read_multiple():
+def wait_rising_edge_GPIO_GCLK_input_long_pause_read_multiple():
     with pin.open_pin( pin.PinId.p1_gpio_gclk(), 'rR' ) as in_pin:
         print "Start sampling transition to HIGH state on P1 GPIO_GCLK..."
         in_pin.reset()
         in_pin.wait()
-        print "High once"
+        print "P1 GPIO_GCLK pin transitioned to a HIGH state."
         time.sleep( 3 )
         if in_pin.read():
             print "Read as High"
         else:
-            print "Ooops! read as LOW"
+            print "Oops! Read as LOW"
 
         for i in range(0,20):
             time.sleep(0.2)
@@ -98,7 +98,7 @@ def wait_long_pause_read_multiple():
 
 if __name__ == '__main__':
     try:
-        wait_long_pause_read_multiple()
+        wait_rising_edge_GPIO_GCLK_input_long_pause_read_multiple()
         wait_rising_edge_GPIO_GCLK_input_no_timeout()
         poll_GPIO_GCLK_input()
         wait_both_GPIO_GCLK_input_no_timeout()

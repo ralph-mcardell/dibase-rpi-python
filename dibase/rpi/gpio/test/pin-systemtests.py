@@ -340,7 +340,7 @@ class XPinIOInteractiveSystemTests(unittest.TestCase):
             print "\nCleaned up left over exports for pins", cleaned_up
         self.assertEqual(cleaned_up,[])
 
-    def test_1_write_to_open_pin_allows_various_values_in_on_off_on_off_etc_sequence(self):
+    def test_050_write_to_open_pin_allows_various_values_in_on_off_on_off_etc_sequence(self):
         a_pin = pin.PinWriter( pin.PinId.p1_gpio_gen0() )
         self.assertFalse( a_pin.closed() )
         # if hardware pin GPIO_GEN0 on the Raspberry Pi P1 connector is
@@ -366,8 +366,9 @@ class XPinIOInteractiveSystemTests(unittest.TestCase):
         a_pin.write('0')
         time.sleep(0.2)
         a_pin.close()
+        print "Test complete.\n"
 
-    def test_2_read_from_open_pin_not_waitable_returns_True_or_False(self):
+    def test_100_read_from_open_pin_not_waitable_returns_True_or_False(self):
         a_pin = pin.PinReader( pin.PinId.p1_gpio_gclk() )
         self.assertFalse( a_pin.closed() )
         # Read a value from the input pin and check it is False or True.
@@ -377,8 +378,9 @@ class XPinIOInteractiveSystemTests(unittest.TestCase):
         value = a_pin.read()
         self.assertIn(value, [False, True])
         print '\nPinReader object on GPIO_GCLK: read value:', value
+        print "Test complete.\n"
 
-    def test_3_read_from_open_pin_waitable_returns_True_or_False(self):
+    def test_150_read_from_open_pin_waitable_returns_True_or_False(self):
         a_pin = pin.PinWaitableReader( pin.PinId.p1_gpio_gclk(), 'B' )
         self.assertFalse( a_pin.closed() )
         # Read a value from the input pin and check it is False or True.
@@ -388,20 +390,29 @@ class XPinIOInteractiveSystemTests(unittest.TestCase):
         value = a_pin.read()
         self.assertIn(value, [False, True])
         print '\nPinWaitableReader object on GPIO_GCLK: read value:', value
+        print "Test complete.\n"
 
-# The following long test function performs many tests.
-# It has to be all one long function so as to execute in sequence as 
-# these tests require timeouts and changing the value of hardware pin
-# GPIO_GCLK on the Raspberry Pi P1 connector (pin 7). Hence, also, they
-# should only be executed if this line is setup for such level changes
-# - e.g. it is connected to a switch. Implies tests cannot run
-# automatically.
-
-    def test_4_waitable_reader_reset_wait_reset_wait_all_edgemodes_edges_check_timeout_and_no_timeout(self):
-        a_pin = pin.PinWaitableReader( pin.PinId.p1_gpio_gen1(), 'B' )
+    def test_200_read_from_open_pin_not_waitable_more_than_once_returns_expected_results(self):
+        a_pin = pin.PinReader( pin.PinId.p1_gpio_gclk() )
         self.assertFalse( a_pin.closed() )
-        a_pin.reset()
+        print "\nSet GPIO_GCLK (Raspberry Pi P1 pin7) HIGH..."
+        time.sleep(3.0)
+        value = a_pin.read()
+        self.assertTrue(value)
+        print "Set GPIO_GCLK (Raspberry Pi P1 pin7) LOW..."
+        time.sleep(3.0)
+        value = a_pin.read()
+        self.assertFalse(value)
+        print "Test complete.\n"
+
+    def test_250_waitable_reader_time_out_expiration_returns_None(self):
+        a_pin = pin.PinWaitableReader( pin.PinId.p1_gpio_gclk(), 'B' )
+        self.assertFalse( a_pin.closed() )
+        a_pin.reset() # clear initially signalled notification
         self.assertIsNone( a_pin.wait(0.001) )
+        self.assertFalse( a_pin.closed() )
+
+    def test_300_waitable_reader_wait_both_no_time_out_notifies_and_reads_results_repeatedly_on_any_state_change(self):
         a_pin = pin.PinWaitableReader( pin.PinId.p1_gpio_gclk(), 'B' )
         self.assertFalse( a_pin.closed() )
         print "\nChange value of GPIO_GCLK (Raspberry Pi P1 pin7) twice (e,g. press and release)..."
@@ -410,15 +421,19 @@ class XPinIOInteractiveSystemTests(unittest.TestCase):
         self.assertIs( changed_object, a_pin )
         value = a_pin.read()
         self.assertIn(value, [False, True])
-        print '\nPinWaitableReader object on GPIO_GCLK: read values:', value
+        self.assertEqual( a_pin.read(), value )
+        print 'PinWaitableReader object on GPIO_GCLK: read value:', value
         time.sleep(0.05)
         a_pin.reset()
         changed_object = a_pin.wait(1000)
         self.assertIs( changed_object, a_pin )
         value = a_pin.read()
         self.assertIn(value, [False, True])
-        print '\nPinWaitableReader object on GPIO_GCLK: read value:', value
-        a_pin.close()
+        self.assertEqual( a_pin.read(), value )
+        print 'PinWaitableReader object on GPIO_GCLK: read value:', value
+        print "Test complete.\n"
+
+    def test_350_waitable_reader_wait_rising_edge_no_time_out_notifies_and_reads_results_repeatedly_on_0_1_state_change(self):
         a_pin = pin.PinWaitableReader( pin.PinId.p1_gpio_gclk(), 'R' )
         self.assertFalse( a_pin.closed() )
         print "\nChange value of GPIO_GCLK (Raspberry Pi P1 pin 7) from 0 to 1 twice (e.g. press, release, press, release)..."
@@ -426,29 +441,34 @@ class XPinIOInteractiveSystemTests(unittest.TestCase):
         a_pin.wait()
         value = a_pin.read()
         self.assertEqual(value, True)
-        print '\nPinWaitableReader object on GPIO_GCLK: read value:', value
+        self.assertEqual( a_pin.read(), value )
+        print 'PinWaitableReader object on GPIO_GCLK: read value:', value
         a_pin.reset()
         a_pin.wait()
         value = a_pin.read()
         self.assertEqual(value, True)
-        print '\nPinWaitableReader object on GPIO_GCLK: read value:', value
-        a_pin.close()
+        self.assertEqual( a_pin.read(), value )
+        print 'PinWaitableReader object on GPIO_GCLK: read value:', value
+        print "Test complete.\n"
+
+    def test_400_waitable_reader_wait_falling_edge_no_time_out_notifies_and_reads_results_repeatedly_on_1_0_state_change(self):
+        time.sleep(0.3)
         a_pin = pin.PinWaitableReader( pin.PinId.p1_gpio_gclk(), 'F' )
         self.assertFalse( a_pin.closed() )
-        time.sleep(0.15)
         print "\nChange value of GPIO_GCLK (Raspberry Pi P1 pin 7) from 1 to 0 twice (e.g. press, release, press, release)..."
         a_pin.reset()
         a_pin.wait()
         value = a_pin.read()
         self.assertEqual(value, False)
-        print '\nPinWaitableReader object on GPIO_GCLK: read value:', value
+        self.assertEqual( a_pin.read(), value )
+        print 'PinWaitableReader object on GPIO_GCLK: read value:', value
         a_pin.reset()
         a_pin.wait()
         value = a_pin.read()
         self.assertEqual(value, False)
-        print '\nPinWaitableReader object on GPIO_GCLK: read value:', value
-
-
+        self.assertEqual( a_pin.read(), value )
+        print 'PinWaitableReader object on GPIO_GCLK: read value:', value
+        print "Test complete.\n"
 
 if __name__ == '__main__':
     unittest.main()
