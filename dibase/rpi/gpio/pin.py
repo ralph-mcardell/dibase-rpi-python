@@ -15,7 +15,7 @@ import select # select.select used to wait on i/ps with edge interrupts enabled
 
 from gpioerror import PinInUseError
 from gpioerror import PinOpenModeInvalidError
-from gpioerror import PinWaitModeInvalidError
+from gpioerror import PinBlockModeInvalidError
 from gpioerror import PinDirectionModeInvalidError
 from pinid import PinId
 from sysfspaths import Paths
@@ -47,90 +47,90 @@ def force_free_pin( pin_id ):
             unexport_file.write( str(pin_id) )
     return unexported
 
-class WaitMode(object):
+class BlockMode(object):
     '''
-        Class encapsulating open wait mode characters and their equivalent
+        Class encapsulating open blocking mode characters and their equivalent
         sys filesystem GPIO edge mode file values.
     '''
     @classmethod
-    def not_waitable_open_mode( cls ):
-        ''' Return character for open wait mode no-waiting mode '''
+    def non_blocking_open_mode( cls ):
+        ''' Return character for open non-blocking mode '''
         return 'N'
 
     @classmethod
-    def not_waitable_edge_mode( cls ):
-        ''' Return string for edge file wait no-waiting mode '''
+    def non_blocking_edge_mode( cls ):
+        ''' Return string for edge file non-blocking mode '''
         return 'none'
 
     @classmethod
-    def wait_on_rising_edge_open_mode( cls ):
-        ''' Return character for open wait on rising edge mode '''
+    def block_on_rising_edge_open_mode( cls ):
+        ''' Return character for open block on rising edge mode '''
         return 'R'
 
     @classmethod
-    def wait_on_rising_edge_edge_mode( cls ):
+    def block_on_rising_edge_edge_mode( cls ):
         ''' Return string for edge file rising edge mode '''
         return 'rising'
 
     @classmethod
-    def wait_on_falling_edge_open_mode( cls ):
-        ''' Return character for open wait on falling edge mode '''
+    def block_on_falling_edge_open_mode( cls ):
+        ''' Return character for open block on falling edge mode '''
         return 'F'
 
     @classmethod
-    def wait_on_falling_edge_edge_mode( cls ):
+    def block_on_falling_edge_edge_mode( cls ):
         ''' Return string for edge file falling edge mode '''
         return 'falling'
 
     @classmethod
-    def wait_on_both_edges_open_mode( cls ):
-        ''' Return character for open wait on both edges mode '''
+    def block_on_both_edges_open_mode( cls ):
+        ''' Return character for open block on both edges mode '''
         return 'B'
 
     @classmethod
-    def wait_on_both_edges_edge_mode( cls ):
+    def block_on_both_edges_edge_mode( cls ):
         ''' Return string for edge file both edges mode '''
         return 'both'
     
     @classmethod
-    def all_wait_open_mode_characters( cls ):
-        ''' Return string of all open wait mode characters '''
-        return ''.join([ WaitMode.not_waitable_open_mode()
-                       , WaitMode.wait_on_rising_edge_open_mode()
-                       , WaitMode.wait_on_falling_edge_open_mode()
-                       , WaitMode.wait_on_both_edges_open_mode()
+    def all_blocking_open_mode_characters( cls ):
+        ''' Return string of all open blocking mode characters '''
+        return ''.join([ BlockMode.non_blocking_open_mode()
+                       , BlockMode.block_on_rising_edge_open_mode()
+                       , BlockMode.block_on_falling_edge_open_mode()
+                       , BlockMode.block_on_both_edges_open_mode()
                        ])
 
     @classmethod
-    def is_valid_wait_open_mode( cls, mode ):
+    def is_valid_blocking_open_mode( cls, mode ):
         ''' 
-            Return True if passed mode value is a valid single open wait
+            Return True if passed mode value is a valid single open blocking
             mode character.
         '''
         return len(mode)==1 and \
-                (mode in WaitMode.all_wait_open_mode_characters())
+                (mode in BlockMode.all_blocking_open_mode_characters())
 
-    def __init__(self, wait_mode):
+    def __init__(self, blocking_mode):
         '''
-            Creates a WaitMode instance from an open wait mode character.
-            Raises a PinWaitModeInvalidError exception if wait_mode
-            is not a valid open wait mode character.
+            Creates a BlockMode instance from an open blocking mode character.
+            Raises a PinBlockModeInvalidError exception if blocking_mode
+            is not a valid open blocking mode character.
         '''
-        if not WaitMode.is_valid_wait_open_mode(wait_mode):
-            raise PinWaitModeInvalidError
-        self.__value = wait_mode
+        if not BlockMode.is_valid_blocking_open_mode(blocking_mode):
+            raise PinBlockModeInvalidError
+        self.__value = blocking_mode
 
-    def is_waitable(self):
+    def is_blocking(self):
         '''
-            Returns True if WaitMode instance represents a mode which will
-            wait for an event. That is for any mode except not waitable.
+            Returns True if BlockMode instance represents a mode which will
+            wait for an event. That is for any mode except non blocking.
         '''
-        return self.__value != WaitMode.not_waitable_open_mode()
+        return self.__value != BlockMode.non_blocking_open_mode()
 
     def open_mode_value(self):
         '''
-            Returns the character value of the open wait mode the WaitMode
-            instance represents which will be the wait_mode value used to 
+            Returns the character value of the open blocking mode the BlockMode
+            instance represents which will be the blocking_mode value used to 
             create the instance.
         '''
         return self.__value
@@ -138,18 +138,18 @@ class WaitMode(object):
     def edge_mode_value(self):
         '''
             Returns the string value for the sys filesystem GPIO edge file
-            for the edge mode the WaitMode instance represents.
+            for the edge mode the BlockMode instance represents.
         '''
-        if self.__value == WaitMode.wait_on_rising_edge_open_mode():
-            return WaitMode.wait_on_rising_edge_edge_mode()
-        elif self.__value == WaitMode.wait_on_falling_edge_open_mode():
-            return WaitMode.wait_on_falling_edge_edge_mode()
-        elif self.__value == WaitMode.wait_on_both_edges_open_mode():
-            return WaitMode.wait_on_both_edges_edge_mode()
-        elif self.__value == WaitMode.not_waitable_open_mode():
-            return WaitMode.not_waitable_edge_mode()
+        if self.__value == BlockMode.block_on_rising_edge_open_mode():
+            return BlockMode.block_on_rising_edge_edge_mode()
+        elif self.__value == BlockMode.block_on_falling_edge_open_mode():
+            return BlockMode.block_on_falling_edge_edge_mode()
+        elif self.__value == BlockMode.block_on_both_edges_open_mode():
+            return BlockMode.block_on_both_edges_edge_mode()
+        elif self.__value == BlockMode.non_blocking_open_mode():
+            return BlockMode.non_blocking_edge_mode()
         else:
-            raise PinWaitModeInvalidError
+            raise PinBlockModeInvalidError
 
 class DirectionMode(object):
     '''
@@ -235,24 +235,24 @@ class _PinIOBase(object):
         Internal mixin base class for concrete Pin IO classes.
         Provides common functionality.
     '''
-    def __init__(self, pin_id, direction_mode, wait_mode):
+    def __init__(self, pin_id, direction_mode, blocking_mode):
         '''
             Provide common initialisation for GPIO pin IO.
-            Parameterised on pin id, and direction and wait modes
+            Parameterised on pin id, and direction and blocking modes
             - Ensures pin_id is a PinId value. Raises PinIdInvalidError
               if it is not a valid PinId value
             - Ensures direction_mode is a DirectionMode value. Raises
               PinDirectionModeInvalidError if it is not a valid DirectionMode
               value
-            - Ensures wait_mode is a WaitMode value. Raises
-              PinWaitModeInvalidError if it is not a valid WaitMode value
+            - Ensures blocking_mode is a BlockMode value. Raises
+              PinBlockModeInvalidError if it is not a valid BlockMode value
             - Calls _validate_init_parameters to perform customisable
               validation. Base implementation raises a PinInUseError if
               the pin is already exported in the sys filesystem
             - Exports the pin in the sys filesystem
             - Sets the direction of data in line with direction_mode
             - Sets the edge file's change event notification mode value
-              to reflect the wait_mode.
+              to reflect the blocking_mode.
             - Opens the sys filesystem GPIO pin's value file for reading
               or writing in accordance with direction_mode and holds it open
         '''
@@ -263,10 +263,10 @@ class _PinIOBase(object):
         self.__pin_id = pin_id
         if not isinstance(direction_mode, DirectionMode):
             direction_mode = DirectionMode(direction_mode)
-        if not isinstance(wait_mode, WaitMode):
-            wait_mode = WaitMode(wait_mode)
+        if not isinstance(blocking_mode, BlockMode):
+            blocking_mode = BlockMode(blocking_mode)
 
-        self.cb_validate_init_parameters(pin_id, direction_mode, wait_mode)
+        self.cb_validate_init_parameters(pin_id, direction_mode, blocking_mode)
 
         # export
         with open(Paths.export_path(), 'w') as export_file:
@@ -274,7 +274,7 @@ class _PinIOBase(object):
 
         # set edge mode file's value
         with open(Paths.edgemode_path(pin_id), 'w') as edge_file:
-            edge_file.write( wait_mode.edge_mode_value() )
+            edge_file.write( blocking_mode.edge_mode_value() )
 
         # set i/o direction
         with open(Paths.direction_path(pin_id), 'w') as direction_file:
@@ -282,8 +282,8 @@ class _PinIOBase(object):
 
         # open value 'file' for reading/writing depending on direction mode
         self.__value_file = open( Paths.value_path(pin_id)\
-                                        , direction_mode.open_mode_value()+'b'
-                                        )
+                                , direction_mode.open_mode_value()+'b'
+                                )
 
     def __del__(self):
         ''' Calls close to try to ensure pin is cleanly freed up '''
@@ -297,7 +297,7 @@ class _PinIOBase(object):
         ''' Ensures close called on exit from 'with' statement '''
         self.close()
 
-    def cb_validate_init_parameters(self, pin_id, direction_mode, wait_mode):
+    def cb_validate_init_parameters(self, pin_id, direction_mode, blocking_mode):
         '''
             Check parameters are valid. Raise exception if they are not.
             Base implementation checks pin_id is not already exported.
@@ -305,7 +305,7 @@ class _PinIOBase(object):
             this super class implementation. Note that basic parameter
             checks are performed before _validate_init_parameters is called
             by converting parameters to instances of their specific,
-            validated, handling types: PinId, DirectionMode and WaitMode.
+            validated, handling types: PinId, DirectionMode and BlockMode.
         '''
         # Raise a PinInUseError if pin is currently exported
         if os.path.exists(Paths.pin_path(pin_id)):
@@ -358,7 +358,7 @@ class PinWriter(_PinIOBase, GPIOWriterBase):
     '''
     def __init__(self, pin_id):
         '''
-            Initialise a PinWriter instance for writing with no waiting.
+            Initialise a PinWriter instance for writing, non-blocking.
         '''
         super(PinWriter, self).__init__(pin_id, 'w','N')
 
@@ -388,7 +388,7 @@ class PinReader(_PinIOBase, GPIOReaderBase):
     '''
 
     def __init__(self, pin_id):
-        ''' Initialise a PinReader instance for reading and no waiting. '''
+        ''' Initialise a PinReader instance for reading, non-blocking. '''
         super(PinReader, self).__init__(pin_id, 'r','N')
 
     def read(self):
@@ -411,25 +411,25 @@ class PinWaitableReader(_PinIOBase, GPIOWaitableReaderBase):
         Handles reading single 0 or 1 values from the related GPIO pin, which
         will have been exported and set up for input as part of the
         initialisation. Note that the read operation does not wait for a state
-        change of the pin - it returns the current pin value 'now' and so is
-        only blocking in terms of IO operation timing. To wait, call wait,
-        which will return on one of the requested pin state changes 
-        ('R':rising edge 0->1 transition, 'F':falling edge 1->0
-        transition, or 'B':both).
+        change of the pin - it returns the pin value of the first read after
+        reset was last called and so is only blocking in terms of IO operation
+        timing. To wait, call wait, which will return on one of the requested
+        pin state changes ('R':rising edge 0->1 transition,
+        'F':falling edge 1->0 transition, or 'B':both).
     '''
 
-    def __init__(self, pin_id, wait_mode):
+    def __init__(self, pin_id, blocking_mode):
         '''
             Initialise a PinWaitableReader instance for reading with the requested
-            waitable wait mode.
+            blocking mode.
         '''
-        super(PinWaitableReader, self).__init__(pin_id, 'r', wait_mode)
+        super(PinWaitableReader, self).__init__(pin_id, 'r', blocking_mode)
 
-    def cb_validate_init_parameters(self, pin_id, direction_mode, wait_mode):
-        if ( not wait_mode.is_waitable() ):
-            raise PinWaitModeInvalidError
+    def cb_validate_init_parameters(self, pin_id, direction_mode, blocking_mode):
+        if ( not blocking_mode.is_blocking() ):
+            raise PinBlockModeInvalidError
         super(PinWaitableReader, self).\
-            cb_validate_init_parameters(pin_id, direction_mode, wait_mode)
+            cb_validate_init_parameters(pin_id, direction_mode, blocking_mode)
 
     def read(self):
         '''
@@ -492,20 +492,20 @@ def open_pin( pin_id, mode='' ):
         If passed it should be a string of 0, 1, or 2 characters.
         The first character of the mode string indicates the desired data
         direction: read/input: 'r' or write/output: 'w'
-        The second, optional, character indicates the wait mode:
-        wait on nothing: 'N', 
-        wait on rising edge events (0 to 1 transitions): 'R',
-        wait on falling edge events (1 to 0 transitions): 'F',
-        wait on events for both edges: 'B'.
-        The default is 'N' wait on no events and is the only valid option when
-        opening a pin for writing/output.
+        The second, optional, character indicates the blocking mode:
+        block on nothing (non-blocking): 'N', 
+        block on rising edge events (0 to 1 transitions): 'R',
+        block on falling edge events (1 to 0 transitions): 'F',
+        block on events for both edges: 'B'.
+        The default is 'N', non-blocking, waiting on no events and is the
+        only valid option when opening a pin for writing/output.
         No mode argument or an empty mode string defaults to read/input and
         not waiting for any edge events.
 
         Returns an object that implements one of the sub-types of GPIOBase:
             If write requested then returned object implements GPIOWriterBase
             If read requested then object returned implements GPIOReaderBase
-                If wait on edge events mode other than 'N' requested then
+                If a blocking mode mode other than 'N' requested then
                     returned object implements GPIOWaitableReaderBase.
 
         Will raise exception on error, which include specific GPIOError
@@ -514,28 +514,28 @@ def open_pin( pin_id, mode='' ):
             PinOpenModeInvalidError if mode is invalid:
                 PinDirectionModeInvalidError if an invalid data direction mode
                 character was specified
-                PinWaitModeInvalidError if an invalid wait for edge events
-                mode was specified for the specified data direction mode 
+                PinBlockModeInvalidError if an invalid blocking mode was
+                specified for the specified data direction mode 
             PinInUseError if the requested pin_id to use was already
             exported (indicting some other process may be using it).
         In addition general Python exceptions such as IOError may be raised.
     '''
     mode_len = len(mode)
     direction_mode = DirectionMode(DirectionMode.read_open_mode())
-    edge_mode = WaitMode(WaitMode.not_waitable_open_mode())
+    edge_mode = BlockMode(BlockMode.non_blocking_open_mode())
     if mode_len >= 1:
         direction_mode = DirectionMode( mode[0] )
         if mode_len == 2:
-            edge_mode = WaitMode( mode[1] )
+            edge_mode = BlockMode( mode[1] )
         elif mode_len > 2:
             raise PinOpenModeInvalidError
     if direction_mode.is_write():
-        if edge_mode.is_waitable(): # any other wait mode meaningless for output
-            raise PinWaitModeInvalidError
+        if edge_mode.is_blocking(): # any other blocking mode meaningless for output
+            raise PinBlockModeInvalidError
         return PinWriter( pin_id )
     else: # direction mode only read or write...
         assert( direction_mode.is_read() )
-        if edge_mode.is_waitable():
+        if edge_mode.is_blocking():
             return PinWaitableReader( pin_id, edge_mode.open_mode_value() )
         else:
             return PinReader( pin_id )

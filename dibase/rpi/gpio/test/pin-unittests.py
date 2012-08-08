@@ -18,58 +18,58 @@ if __name__ == '__main__':
     sys.path.insert(0, './../..')
 from gpio import pin
 
-class WaitModeUnitTests(unittest.TestCase):
-    def test_not_waitable_open_mode_to_edge_mode_mapping(self):
-        not_waitable_wait_mode_value = pin.WaitMode.not_waitable_open_mode()
-        self.assertIn(not_waitable_wait_mode_value, pin.WaitMode.all_wait_open_mode_characters())
-        self.assertTrue(pin.WaitMode.is_valid_wait_open_mode(not_waitable_wait_mode_value))
-        not_waitable_wait_mode = pin.WaitMode(not_waitable_wait_mode_value)
-        self.assertEqual(not_waitable_wait_mode.open_mode_value(), pin.WaitMode.not_waitable_open_mode())       
-        self.assertEqual(not_waitable_wait_mode.edge_mode_value(), pin.WaitMode.not_waitable_edge_mode())
-        self.assertFalse(not_waitable_wait_mode.is_waitable())
+class BlockModeUnitTests(unittest.TestCase):
+    def test_non_blocking_open_mode_to_edge_mode_mapping(self):
+        non_blocking_wait_mode_value = pin.BlockMode.non_blocking_open_mode()
+        self.assertIn(non_blocking_wait_mode_value, pin.BlockMode.all_blocking_open_mode_characters())
+        self.assertTrue(pin.BlockMode.is_valid_blocking_open_mode(non_blocking_wait_mode_value))
+        non_blocking_wait_mode = pin.BlockMode(non_blocking_wait_mode_value)
+        self.assertEqual(non_blocking_wait_mode.open_mode_value(), pin.BlockMode.non_blocking_open_mode())       
+        self.assertEqual(non_blocking_wait_mode.edge_mode_value(), pin.BlockMode.non_blocking_edge_mode())
+        self.assertFalse(non_blocking_wait_mode.is_blocking())
 
-    def test_wait_on_rising_edge_open_mode_to_edge_mode_mapping(self):
-        wait_on_rising_edge_wait_mode_value = pin.WaitMode.wait_on_rising_edge_open_mode()
-        self.assertIn(wait_on_rising_edge_wait_mode_value, pin.WaitMode.all_wait_open_mode_characters())
-        self.assertTrue(pin.WaitMode.is_valid_wait_open_mode(wait_on_rising_edge_wait_mode_value))
-        wait_on_rising_edge_wait_mode = pin.WaitMode(wait_on_rising_edge_wait_mode_value)
-        self.assertEqual(wait_on_rising_edge_wait_mode.open_mode_value(), pin.WaitMode.wait_on_rising_edge_open_mode())       
-        self.assertEqual(wait_on_rising_edge_wait_mode.edge_mode_value(), pin.WaitMode.wait_on_rising_edge_edge_mode())
-        self.assertTrue(wait_on_rising_edge_wait_mode.is_waitable())
+    def test_block_on_rising_edge_open_mode_to_edge_mode_mapping(self):
+        block_on_rising_edge_wait_mode_value = pin.BlockMode.block_on_rising_edge_open_mode()
+        self.assertIn(block_on_rising_edge_wait_mode_value, pin.BlockMode.all_blocking_open_mode_characters())
+        self.assertTrue(pin.BlockMode.is_valid_blocking_open_mode(block_on_rising_edge_wait_mode_value))
+        block_on_rising_edge_wait_mode = pin.BlockMode(block_on_rising_edge_wait_mode_value)
+        self.assertEqual(block_on_rising_edge_wait_mode.open_mode_value(), pin.BlockMode.block_on_rising_edge_open_mode())       
+        self.assertEqual(block_on_rising_edge_wait_mode.edge_mode_value(), pin.BlockMode.block_on_rising_edge_edge_mode())
+        self.assertTrue(block_on_rising_edge_wait_mode.is_blocking())
 
-    def test_wait_on_falling_edge_open_mode_to_edge_mode_mapping(self):
-        wait_on_falling_edge_wait_mode_value = pin.WaitMode.wait_on_falling_edge_open_mode()
-        self.assertIn(wait_on_falling_edge_wait_mode_value, pin.WaitMode.all_wait_open_mode_characters())
-        self.assertTrue(pin.WaitMode.is_valid_wait_open_mode(wait_on_falling_edge_wait_mode_value))
-        wait_on_falling_edge_wait_mode = pin.WaitMode(wait_on_falling_edge_wait_mode_value)
-        self.assertEqual(wait_on_falling_edge_wait_mode.open_mode_value(), pin.WaitMode.wait_on_falling_edge_open_mode())       
-        self.assertEqual(wait_on_falling_edge_wait_mode.edge_mode_value(), pin.WaitMode.wait_on_falling_edge_edge_mode())
-        self.assertTrue(wait_on_falling_edge_wait_mode.is_waitable())
+    def test_block_on_falling_edge_open_mode_to_edge_mode_mapping(self):
+        block_on_falling_edge_wait_mode_value = pin.BlockMode.block_on_falling_edge_open_mode()
+        self.assertIn(block_on_falling_edge_wait_mode_value, pin.BlockMode.all_blocking_open_mode_characters())
+        self.assertTrue(pin.BlockMode.is_valid_blocking_open_mode(block_on_falling_edge_wait_mode_value))
+        block_on_falling_edge_wait_mode = pin.BlockMode(block_on_falling_edge_wait_mode_value)
+        self.assertEqual(block_on_falling_edge_wait_mode.open_mode_value(), pin.BlockMode.block_on_falling_edge_open_mode())       
+        self.assertEqual(block_on_falling_edge_wait_mode.edge_mode_value(), pin.BlockMode.block_on_falling_edge_edge_mode())
+        self.assertTrue(block_on_falling_edge_wait_mode.is_blocking())
 
-    def test_wait_on_both_edges_open_mode_to_edge_mode_mapping(self):
-        wait_on_both_edges_wait_mode_value = pin.WaitMode.wait_on_both_edges_open_mode()
-        self.assertIn(wait_on_both_edges_wait_mode_value, pin.WaitMode.all_wait_open_mode_characters())
-        self.assertTrue(pin.WaitMode.is_valid_wait_open_mode(wait_on_both_edges_wait_mode_value))
-        wait_on_both_edges_wait_mode = pin.WaitMode(wait_on_both_edges_wait_mode_value)
-        self.assertEqual(wait_on_both_edges_wait_mode.open_mode_value(), pin.WaitMode.wait_on_both_edges_open_mode())       
-        self.assertEqual(wait_on_both_edges_wait_mode.edge_mode_value(), pin.WaitMode.wait_on_both_edges_edge_mode())
-        self.assertTrue(wait_on_both_edges_wait_mode.is_waitable())
+    def test_block_on_both_edges_open_mode_to_edge_mode_mapping(self):
+        block_on_both_edges_wait_mode_value = pin.BlockMode.block_on_both_edges_open_mode()
+        self.assertIn(block_on_both_edges_wait_mode_value, pin.BlockMode.all_blocking_open_mode_characters())
+        self.assertTrue(pin.BlockMode.is_valid_blocking_open_mode(block_on_both_edges_wait_mode_value))
+        block_on_both_edges_wait_mode = pin.BlockMode(block_on_both_edges_wait_mode_value)
+        self.assertEqual(block_on_both_edges_wait_mode.open_mode_value(), pin.BlockMode.block_on_both_edges_open_mode())       
+        self.assertEqual(block_on_both_edges_wait_mode.edge_mode_value(), pin.BlockMode.block_on_both_edges_edge_mode())
+        self.assertTrue(block_on_both_edges_wait_mode.is_blocking())
 
     def test_bad_open_mode_values_fail(self):
-        max_open_mode_character = max(pin.WaitMode.all_wait_open_mode_characters())
+        max_open_mode_character = max(pin.BlockMode.all_blocking_open_mode_characters())
         not_open_mode_character = chr(ord(max_open_mode_character[0])+1)
-        not_open_mode_str = pin.WaitMode.all_wait_open_mode_characters()
+        not_open_mode_str = pin.BlockMode.all_blocking_open_mode_characters()
         bad_open_mode_str = not_open_mode_str[0:2]
         self.assertNotIn( not_open_mode_character
-                        , pin.WaitMode.all_wait_open_mode_characters()
+                        , pin.BlockMode.all_blocking_open_mode_characters()
                         , "## selected bad open mode character is VALID open mode character!!"
                         )
-        self.assertFalse( pin.WaitMode.is_valid_wait_open_mode(not_open_mode_character) )
-        self.assertFalse( pin.WaitMode.is_valid_wait_open_mode(bad_open_mode_str) )
-        with self.assertRaises( pin.PinWaitModeInvalidError ):
-            pin.WaitMode(not_open_mode_character)
-        with self.assertRaises( pin.PinWaitModeInvalidError ):
-            pin.WaitMode(bad_open_mode_str)
+        self.assertFalse( pin.BlockMode.is_valid_blocking_open_mode(not_open_mode_character) )
+        self.assertFalse( pin.BlockMode.is_valid_blocking_open_mode(bad_open_mode_str) )
+        with self.assertRaises( pin.PinBlockModeInvalidError ):
+            pin.BlockMode(not_open_mode_character)
+        with self.assertRaises( pin.PinBlockModeInvalidError ):
+            pin.BlockMode(bad_open_mode_str)
 
 class DirectionModeUnitTests(unittest.TestCase):
     def test_read_open_mode_is_valid(self):

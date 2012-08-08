@@ -29,7 +29,7 @@ class PinOpenModeInvalidError(GPIOError):
     """
     pass
 
-class PinWaitModeInvalidError(PinOpenModeInvalidError):
+class PinBlockModeInvalidError(PinOpenModeInvalidError):
     """ 
         The requested wait mode character is invalid.
         Should be 'R', 'F' or 'B', or 'N' for no wait mode.

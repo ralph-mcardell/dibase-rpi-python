@@ -20,7 +20,7 @@ class GPIOBase(object):
         time.
         Defines common operations for GPIO pins that make sense: close, closed,
         fileno, readable, writable in the style of io.IOBase. Also included is
-        the GPIO specific query method waitable.
+        the GPIO specific query method blocking.
     '''
     __metaclass__ = abc.ABCMeta
 
@@ -53,10 +53,9 @@ class GPIOBase(object):
         pass
 
     @abc.abstractmethod
-    def waitable( self ):
+    def blocking( self ):
         ''' 
-            Returns a True if resource can be waited on for 
-            change notification
+            Returns a True if IO blocks, False if it does not.
         '''
         pass
 
@@ -64,7 +63,7 @@ class GPIOReaderBase(GPIOBase):
     '''
         Abstract base class for classes supporting GPIO pin reading (input)
         This class assumes concrete type instances are readable, not writable
-        AND not waitable (see GPIOWaitableReaderBase).
+        AND not blocking (see GPIOWaitableReaderBase).
     '''
     __metaclass__ = abc.ABCMeta
 
@@ -76,10 +75,10 @@ class GPIOReaderBase(GPIOBase):
         ''' Returns False: not a reader-writer '''
         return False
 
-    def waitable( self ):
+    def blocking( self ):
         ''' 
             Returns False - use GPIOWaitableReaderBase for 
-            waitable readers
+            blocking readers
         '''
         return False
 
@@ -95,7 +94,7 @@ class GPIOWriterBase(GPIOBase):
     '''
         Abstract base class for classes supporting GPIO pin writing (output)
         This class assumes concrete type instances are writable, not readable
-        and not waitable as it makes no sense to wait on output transitions
+        and not blocking as it makes no sense to wait on output transitions
         this way.
     '''
     __metaclass__ = abc.ABCMeta
@@ -108,8 +107,8 @@ class GPIOWriterBase(GPIOBase):
         ''' Returns True: writers are writable! '''
         return True
 
-    def waitable( self ):
-        ''' Returns a False - cannot wait on output! '''
+    def blocking( self ):
+        ''' Returns a False - output does not block. '''
         return False
 
     @abc.abstractmethod
@@ -126,7 +125,7 @@ class GPIOWaitableReaderBase(GPIOReaderBase):
         with edge event notifications (value state transitions) enabled
         allowing waiting for such events to occur.
         This class assumes concrete type instances are readable, not writable
-        AND ARE waitable.
+        AND ARE blocking.
     '''
     __metaclass__ = abc.ABCMeta
 
@@ -138,8 +137,8 @@ class GPIOWaitableReaderBase(GPIOReaderBase):
         ''' Returns False: not a reader-writer '''
         return False
 
-    def waitable( self ):
-        ''' Returns True - this is a waitable type! '''
+    def blocking( self ):
+        ''' Returns True - this is a blocking type. '''
         return True
 
     @abc.abstractmethod
