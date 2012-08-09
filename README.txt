@@ -66,37 +66,40 @@ state and this is supported in the sys filesystem. It is only
 relevant to input values - as changes to written values to
 output pins could have notification handled elsewhere by
 software. To take advantage of pin state change notifications
-we can request a pin be opened with a wait mode value by
+we can request a pin be opened with a blocking mode value by
 providing a second character in the open mode string:
 
-* 'N' indicates no wait mode. Only mode supported for writable
-  pins (default)
+* 'N' indicates no edge state transition events are raised and
+  so reads will be non-blocking polling mode. Only mode
+  supported for writable pins. (default)
 
-* 'R' wait for rising edge state transitions - i.e. when the
-  input value changes from 0 to 1
+* 'R' Raise rising edge state transitions events - i.e. when
+   the input value changes from 0 to 1
 
-* 'F' wait for falling edge state transitions - i.e. when the
-  input value changes from 1 to 0
+* 'F' Raise falling edge state transitions events - i.e. when
+  the input value changes from 1 to 0
 
-* 'B' wait for both (or either) edge state transitions
+* 'B' Raise events for both edge state transitions
 
 Note that if no mode string value is passed or an empty mode
 string passed then the default direction and wait modes are
-used: 'rN' : open for reading (input), not waitable.
+used: 'rN' : open for reading (input), non-blocking.
 
 The object returned from open_pin will have operations
 pertinent to the requested open mode, so a pin opened for
-writing will have a write operation but no read or wait
+writing will have a write operation but no read
 operations.
 
-A read pin opened that is not waitable will have a read
-operation but no write or wait operations.
+A read pin opened for reading with no edge state transition
+events will have a non-blocking read operation but no write
+operation.
 
-A read pin opened that is waitable will have read and wait
-operations but no write operation.
+A read pin opened for reading with edge state transition
+events will have a blocking read operation but no write
+operation.
 
 All such objects can be queried to determine if they are
-readable, writeable, waitable or closed and for the underlying
+readable, writeable, blocking or closed and for the underlying
 OS file descriptor number representing the file descriptor used
 to access the GPIO pin's sys file system *value* file. Unlike
 some other Raspberry Pi Python GPIO packages pin IO objects
