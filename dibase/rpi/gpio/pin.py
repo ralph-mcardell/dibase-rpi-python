@@ -441,12 +441,13 @@ class PinWaitableReader(_PinIOBase, GPIOWaitableReaderBase):
         self._value_file().seek(0)
         return self._value_file().read(1) == '1'
 
-    def wait( self, timeout=False ):
+    def wait( self, timeout=None ):
         '''
             Returns when the pin signals a waited for value 'edge' transition
             occurs or after the timeout time, in seconds, if specified, has
-            elapsed. No timeout value  will cause a wait 'forever' or until a
-            monitored event occurs. A zero timeout will return immediately.
+            elapsed. No timeout value or a tomeout of None will cause a wait
+            'forever' or until a monitored event occurs. A zero timeout will
+            return immediately.
             
             Raises a ValueError if the instance is closed.
 
@@ -457,15 +458,10 @@ class PinWaitableReader(_PinIOBase, GPIOWaitableReaderBase):
         if self.closed():
             raise ValueError
 
-        if timeout:
-            changed = select.select( [], [], [self], timeout )
-            if changed == ([], [], []): # Triple of empty lists=>call timed-out
-                return None
-            else:
-                self.read()  # grab value: will latch until reset
-                return self
+        changed = select.select( [], [], [self], timeout )
+        if changed == ([], [], []): # Triple of empty lists=>call timed-out
+            return None
         else:
-            changed = select.select( [], [], [self] )
             self.read()  # grab value: will latch until reset
             return self
 
