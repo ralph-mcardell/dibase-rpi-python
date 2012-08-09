@@ -399,11 +399,8 @@ class PinReader(_PinIOBase, GPIOReaderBase):
         if self.closed():
             raise ValueError
 
-        # reset any previously latched input value and rewind to file start
-        self._value_file().read()
         self._value_file().seek(0)
-
-        return self._value_file().read(1) == '1'
+        return self._value_file().read()[0] == '1'
 
 class PinBlockingReader(_PinIOBase, GPIOBlockingReaderBase):
     '''
@@ -431,49 +428,33 @@ class PinBlockingReader(_PinIOBase, GPIOBlockingReaderBase):
         super(PinBlockingReader, self).\
             cb_validate_init_parameters(pin_id, direction_mode, blocking_mode)
 
-    def read(self):
+    def read( self, timeout=None ):
         '''
-            Returns a True if 1 read from an open pin GPIO line, else False.
-            Raises a ValueError if the object is closed.
-       '''
+            Returns when an edge event occurs or time out expires, unless
+            timeout argument is 0. Implies pin opened in an edge event
+            blocking mode.
+
+            Timeout values are floating point values in seconds. If timeout
+            is not given or None then call will not timeout and will return
+            normally only when an edge event occurs. A 0 timeout will return
+            immediately with the polled value of the pin.
+
+            Returns pin value as a Booelan: True if pin is high or False if
+            it is low. None is returned if the call timed out.
+
+            Throws a ValueError if the instance is not open (that is
+            self.closed() returns True).
+        '''
         if self.closed():
             raise ValueError
+
+        if timeout != 0:
+            changed = select.select( [], [], [self], timeout )
+            if changed == ([], [], []): # Triple of empty lists=>timed-out
+                return None
+        
         self._value_file().seek(0)
-        return self._value_file().read(1) == '1'
-
-    def wait( self, timeout=None ):
-        '''
-            Returns when the pin signals a waited for value 'edge' transition
-            occurs or after the timeout time, in seconds, if specified, has
-            elapsed. No timeout value or a tomeout of None will cause a wait
-            'forever' or until a monitored event occurs. A zero timeout will
-            return immediately.
-            
-            Raises a ValueError if the instance is closed.
-
-            Returns self, as only possible notified entity or None if
-            timeout expired before any notification events were received.
-            
-        '''
-        if self.closed():
-            raise ValueError
-
-        changed = select.select( [], [], [self], timeout )
-        if changed == ([], [], []): # Triple of empty lists=>call timed-out
-            return None
-        else:
-            self.read()  # grab value: will latch until reset
-            return self
-
-    def reset( self ):
-        '''
-            Resets previously signalled events causing wait to return
-            Raises a ValueError if instance is closed
-        '''
-        if self.closed():
-            raise ValueError
-        # Reading all from value file clears edge event notification
-        self._value_file().read()
+        return self._value_file().read()[0]=='1'
 
 def open_pin( pin_id, mode='' ):
     '''

@@ -85,8 +85,9 @@ class GPIOReaderBase(GPIOBase):
     @abc.abstractmethod
     def read( self ):
         '''
-            Returns integer - each bit reflects momentary state of
-            GPIO bits managed by reasource
+            Should return one or more values indicating state of pin bit(s)
+            each bit reflects momentary state of GPIO bits managed by
+            reasource.
         '''
         pass
 
@@ -142,24 +143,19 @@ class GPIOBlockingReaderBase(GPIOBase):
         return True
 
     @abc.abstractmethod
-    def wait( self, timeout=False ):
+    def read( self, timeout=None ):
         '''
-            Returns when one or more input GPIO lines managed by
-            the resource changes state in a way that is monitored
-            or after the timeout time, if specified, has elapsed.
+            Waits until an edge event occurs on a GPIO pin or the timeout
+            value expires.
+            
+            No timeout or a timeout value of None should wait 'forever',
+            for an edge event to occur.
+            
+            A timeout value of zero should return immediately with the polled
+            value of the GPIO pin(s).
+            
+            Should return one or more values indicating state of pin bit(s)
+            after event notification or None if read timed out before any
+            edge events occured.
         '''
         pass
-
-    @abc.abstractmethod
-    def reset( self ):
-        ''' Resets previously signalled events causing wait to return '''
-        pass
-
-#    @abc.abstractmethod
-#    def read( self, timeout=None ):
-#        '''
-#            Returns integer or None - each bit reflects momentary state of
-#            GPIO bits managed by reasource. A None return value  indicates
-#            read timed out before an edge event notification occured.
-#        '''
-#        pass

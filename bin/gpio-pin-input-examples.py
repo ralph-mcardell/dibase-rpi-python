@@ -16,10 +16,10 @@ if __name__ == '__main__':
 import dibase.rpi.gpio.pin as pin
 import dibase.rpi.gpio.gpioerror as error
 
-def poll_GPIO_GCLK_input():
+def poll_GPIO_GCLK_opened_non_blocking():
     INTERVAL = 1.0 # seconds
     with pin.open_pin( pin.PinId.p1_gpio_gclk(), 'rN' ) as in_pin:
-        print "Start sampling..."
+        print "Start sampling GPIO_GCLK (open mode rN) ..."
         time.sleep(INTERVAL)
         first_sample = in_pin.read()
         time.sleep(INTERVAL)
@@ -29,80 +29,74 @@ def poll_GPIO_GCLK_input():
         print "Read 3 samples from P1 GPIO_GCLK at approximately", INTERVAL,\
               "second intervals:", first_sample, second_sample, third_sample
 
-def wait_both_GPIO_GCLK_input_no_timeout():
-    with pin.open_pin( pin.PinId.p1_gpio_gclk(), 'rB' ) as in_pin:
-        print "Start sampling 3 state changes on P1 GPIO_GCLK..."
-        in_pin.wait()   # returns immediately with initial pin state
-        first_sample = in_pin.read()
-        in_pin.reset()
-        in_pin.wait()
-        second_sample = in_pin.read()
-        in_pin.reset()
-        in_pin.wait()
-        third_sample = in_pin.read()
-        in_pin.reset()
-        print "Read 3 samples from P1 GPIO_GCLK ",\
-               first_sample, second_sample, third_sample
-
-def wait_both_GPIO_GCLK_input_with_timeouts():
-    with pin.open_pin( pin.PinId.p1_gpio_gclk(), 'rB' ) as in_pin:
-        in_pin.wait()   # returns immediately with initial pin state
-        first_sample = in_pin.read()
-        in_pin.reset()
-
-        # wait for short period of time so likely to time out...
-        changed = in_pin.wait( 0.0001 )
-
-        if changed==None:
-            print "Wait for input change timed out..."
-        else:
-            print "Value now:", changed.read()
-
-        # wait for long period of time so less likely to time out...
-        changed = in_pin.wait( 10000 )
-
-        if changed==None:
-            print "Wait for input change timed out..."
-        else:
-            print "Value now:", changed.read()
-
-def wait_rising_edge_GPIO_GCLK_input_no_timeout():
+def poll_GPIO_GCLK_opened_blocking_on_rising_edge():
+    INTERVAL = 1.0 # seconds
     with pin.open_pin( pin.PinId.p1_gpio_gclk(), 'rR' ) as in_pin:
+        print "Start sampling GPIO_GCLK (open mode rR) ..."
+        in_pin.read() # returns immediately with initial pin state
+        time.sleep(INTERVAL)
+        first_sample = in_pin.read(0)
+        time.sleep(INTERVAL)
+        second_sample = in_pin.read(0)
+        time.sleep(INTERVAL)
+        third_sample = in_pin.read(0)
+        print "Read 3 samples from P1 GPIO_GCLK at approximately", INTERVAL,\
+              "second intervals:", first_sample, second_sample, third_sample
+
+def wait_on_rising_edge_GPIO_GCLK_no_timeout():
+    with pin.open_pin( pin.PinId.p1_gpio_gclk(), 'rR' ) as in_pin:
+        in_pin.read() # returns immediately with initial pin state
         print "Start sampling 3 transitions to HIGH state on P1 GPIO_GCLK..."
-        in_pin.reset()
-        in_pin.wait()
+        in_pin.read()
         print "High once"
-        in_pin.reset()
-        in_pin.wait()
+        in_pin.read()
         print "High twice"
-        in_pin.reset()
-        in_pin.wait()
+        in_pin.read()
         print "High thrice"
         print "P1 GPIO_GCLK gone high 3 times"
 
-def wait_rising_edge_GPIO_GCLK_input_long_pause_read_multiple():
-    with pin.open_pin( pin.PinId.p1_gpio_gclk(), 'rR' ) as in_pin:
-        print "Start sampling transition to HIGH state on P1 GPIO_GCLK..."
-        in_pin.reset()
-        in_pin.wait()
-        print "P1 GPIO_GCLK pin transitioned to a HIGH state."
-        time.sleep( 3 )
-        if in_pin.read():
-            print "Read as High"
-        else:
-            print "Oops! Read as LOW"
+def wait_on_both_GPIO_GCLK_no_timeout():
+    with pin.open_pin( pin.PinId.p1_gpio_gclk(), 'rB' ) as in_pin:
+        in_pin.read()   # returns immediately with initial pin state
+        print "Start waiting for 3 state changes on P1 GPIO_GCLK..."
+        first_sample = in_pin.read()
+        second_sample = in_pin.read()
+        third_sample = in_pin.read()
+        print "Read 3 samples from P1 GPIO_GCLK ",\
+               first_sample, second_sample, third_sample
 
-        for i in range(0,20):
-            time.sleep(0.2)
-            print in_pin.read()
+def wait_on_both_GPIO_GCLK_with_timeouts():
+    with pin.open_pin( pin.PinId.p1_gpio_gclk(), 'rB' ) as in_pin:
+        in_pin.read()   # returns immediately with initial pin state
+
+        print "Waiting for 0.0001s for state change on P1 GPIO_GCLK, timeout probable..."
+        value = in_pin.read( 0.0001 )
+
+        if value==None:
+            print "Wait for input change timed out..."
+        else:
+            print "Value read:", value
+
+        print "Waiting for 1000s for state change on P1 GPIO_GCLK, timeout less probable..."
+        value = in_pin.read( 10000 )
+
+        if value==None:
+            print "Wait for input change timed out..."
+        else:
+            print "Value read:", value
 
 if __name__ == '__main__':
     try:
-        wait_rising_edge_GPIO_GCLK_input_long_pause_read_multiple()
-        wait_rising_edge_GPIO_GCLK_input_no_timeout()
-        poll_GPIO_GCLK_input()
-        wait_both_GPIO_GCLK_input_no_timeout()
-        wait_both_GPIO_GCLK_input_with_timeouts()
+        INTERVAL = 0.3 # seconds
+        poll_GPIO_GCLK_opened_non_blocking()
+        time.sleep( INTERVAL )
+        poll_GPIO_GCLK_opened_blocking_on_rising_edge()
+        time.sleep( INTERVAL )
+        wait_on_rising_edge_GPIO_GCLK_no_timeout()
+        time.sleep( INTERVAL )
+        wait_on_both_GPIO_GCLK_no_timeout()
+        time.sleep( INTERVAL )
+        wait_on_both_GPIO_GCLK_with_timeouts()
     except error.GPIOError:
         print "Oops unexpected GPIO related error!"
     except ValueError:
