@@ -21,7 +21,7 @@ from pinid import PinId
 from sysfspaths import Paths
 from gpiobase import GPIOReaderBase
 from gpiobase import GPIOWriterBase
-from gpiobase import GPIOWaitableReaderBase
+from gpiobase import GPIOBlockingReaderBase
 
 def force_free_pin( pin_id ):
     '''
@@ -405,9 +405,9 @@ class PinReader(_PinIOBase, GPIOReaderBase):
 
         return self._value_file().read(1) == '1'
 
-class PinWaitableReader(_PinIOBase, GPIOWaitableReaderBase):
+class PinBlockingReader(_PinIOBase, GPIOBlockingReaderBase):
     '''
-        Concrete GPIOWaitableReaderBase implementation for a single GPIO pin.
+        Concrete GPIOBlockingReaderBase implementation for a single GPIO pin.
         Handles reading single 0 or 1 values from the related GPIO pin, which
         will have been exported and set up for input as part of the
         initialisation. Note that the read operation does not wait for a state
@@ -420,15 +420,15 @@ class PinWaitableReader(_PinIOBase, GPIOWaitableReaderBase):
 
     def __init__(self, pin_id, blocking_mode):
         '''
-            Initialise a PinWaitableReader instance for reading with the requested
-            blocking mode.
+            Initialise a PinBlockingReader instance for reading with the
+            requested blocking mode.
         '''
-        super(PinWaitableReader, self).__init__(pin_id, 'r', blocking_mode)
+        super(PinBlockingReader, self).__init__(pin_id, 'r', blocking_mode)
 
-    def cb_validate_init_parameters(self, pin_id, direction_mode, blocking_mode):
+    def cb_validate_init_parameters(self,pin_id,direction_mode,blocking_mode):
         if ( not blocking_mode.is_blocking() ):
             raise PinBlockModeInvalidError
-        super(PinWaitableReader, self).\
+        super(PinBlockingReader, self).\
             cb_validate_init_parameters(pin_id, direction_mode, blocking_mode)
 
     def read(self):
@@ -502,7 +502,7 @@ def open_pin( pin_id, mode='' ):
             If write requested then returned object implements GPIOWriterBase
             If read requested then object returned implements GPIOReaderBase
                 If a blocking mode mode other than 'N' requested then
-                    returned object implements GPIOWaitableReaderBase.
+                    returned object implements GPIOBlockingReaderBase.
 
         Will raise exception on error, which include specific GPIOError
         types:
@@ -532,7 +532,7 @@ def open_pin( pin_id, mode='' ):
     else: # direction mode only read or write...
         assert( direction_mode.is_read() )
         if edge_mode.is_blocking():
-            return PinWaitableReader( pin_id, edge_mode.open_mode_value() )
+            return PinBlockingReader( pin_id, edge_mode.open_mode_value() )
         else:
             return PinReader( pin_id )
 

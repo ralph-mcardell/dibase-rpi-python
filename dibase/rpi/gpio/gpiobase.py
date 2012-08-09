@@ -63,7 +63,7 @@ class GPIOReaderBase(GPIOBase):
     '''
         Abstract base class for classes supporting GPIO pin reading (input)
         This class assumes concrete type instances are readable, not writable
-        AND not blocking (see GPIOWaitableReaderBase).
+        AND not blocking (see GPIOBlockingReaderBase).
     '''
     __metaclass__ = abc.ABCMeta
 
@@ -77,7 +77,7 @@ class GPIOReaderBase(GPIOBase):
 
     def blocking( self ):
         ''' 
-            Returns False - use GPIOWaitableReaderBase for 
+            Returns False - use GPIOBlockingReaderBase for 
             blocking readers
         '''
         return False
@@ -119,7 +119,7 @@ class GPIOWriterBase(GPIOBase):
         '''
         pass
 
-class GPIOWaitableReaderBase(GPIOReaderBase):
+class GPIOBlockingReaderBase(GPIOBase):
     '''
         Abstract base class for classes supporting GPIO pin reading (input)
         with edge event notifications (value state transitions) enabled
@@ -154,3 +154,12 @@ class GPIOWaitableReaderBase(GPIOReaderBase):
     def reset( self ):
         ''' Resets previously signalled events causing wait to return '''
         pass
+
+#    @abc.abstractmethod
+#    def read( self, timeout=None ):
+#        '''
+#            Returns integer or None - each bit reflects momentary state of
+#            GPIO bits managed by reasource. A None return value  indicates
+#            read timed out before an edge event notification occured.
+#        '''
+#        pass

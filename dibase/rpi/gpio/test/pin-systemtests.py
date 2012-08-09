@@ -178,7 +178,7 @@ class PinReaderSystemTests(unittest.TestCase):
         self.assertTrue( outside_value.closed() )
 
 
-class PinWaitableReaderSystemTests(unittest.TestCase):
+class PinBlockingReaderSystemTests(unittest.TestCase):
     def tearDown(self):
         cleaned_up = []
         for v in pinid.RPiPinIdSet.valid_ids():
@@ -191,18 +191,18 @@ class PinWaitableReaderSystemTests(unittest.TestCase):
 
     def test_invalid_pin_ids_fail_pin_creation(self):
         with self.assertRaises( error.PinIdInvalidError ):
-            a_pin = pin.PinWaitableReader( -1, 'B' )
+            a_pin = pin.PinBlockingReader( -1, 'B' )
         with self.assertRaises( error.PinIdInvalidError ):
-            a_pin = pin.PinWaitableReader( "Nan", 'B' )
+            a_pin = pin.PinBlockingReader( "Nan", 'B' )
         with self.assertRaises( error.PinIdInvalidError ):
-            a_pin = pin.PinWaitableReader( 100000, 'B' )
+            a_pin = pin.PinBlockingReader( 100000, 'B' )
         with self.assertRaises( error.PinIdInvalidError ):
-            a_pin = pin.PinWaitableReader( None, 'B' )
+            a_pin = pin.PinBlockingReader( None, 'B' )
         with self.assertRaises( error.PinIdInvalidError ):
-            a_pin = pin.PinWaitableReader( len(pinid.AllChipPinIdSet.valid_ids()), 'B' )
+            a_pin = pin.PinBlockingReader( len(pinid.AllChipPinIdSet.valid_ids()), 'B' )
 
     def test_create_valid_pin_for_reading(self):
-        a_pin = pin.PinWaitableReader( pin.PinId.p1_gpio_gen1(), 'B' )
+        a_pin = pin.PinBlockingReader( pin.PinId.p1_gpio_gen1(), 'B' )
         self.assertFalse( a_pin.closed() )
         self.assertFalse( a_pin.writable() )
         self.assertTrue( a_pin.readable() )
@@ -212,11 +212,11 @@ class PinWaitableReaderSystemTests(unittest.TestCase):
 
     def test_no_explicit_close_closes_on_pin_object_destruction(self):
         ''' Note: failure will be picked up in the tearDown cleanup code '''
-        a_pin = pin.PinWaitableReader( pin.PinId.p1_gpio_gen1(), 'B' )
+        a_pin = pin.PinBlockingReader( pin.PinId.p1_gpio_gen1(), 'B' )
         self.assertFalse( a_pin.closed() )
 
     def test_multiple_close_does_nothing_bad(self):
-        a_pin = pin.PinWaitableReader( pin.PinId.p1_gpio_gen1(), 'B' )
+        a_pin = pin.PinBlockingReader( pin.PinId.p1_gpio_gen1(), 'B' )
         self.assertFalse( a_pin.closed() )
         a_pin.close()
         self.assertTrue( a_pin.closed() )
@@ -226,7 +226,7 @@ class PinWaitableReaderSystemTests(unittest.TestCase):
         self.assertTrue( a_pin.closed() )
 
     def test_fileno_produces_int_on_open_pin(self):
-        a_pin = pin.PinWaitableReader( pin.PinId.p1_gpio_gen1(), 'B' )
+        a_pin = pin.PinBlockingReader( pin.PinId.p1_gpio_gen1(), 'B' )
         self.assertFalse( a_pin.closed() )
         file_descriptor_number = a_pin.fileno()
         self.assertNotEqual(file_descriptor_number, None)
@@ -234,28 +234,28 @@ class PinWaitableReaderSystemTests(unittest.TestCase):
         a_pin.close()
 
     def test_fileno_produces_None_on_closed_pin(self):
-        a_pin = pin.PinWaitableReader( pin.PinId.p1_gpio_gen1(), 'B' )
+        a_pin = pin.PinBlockingReader( pin.PinId.p1_gpio_gen1(), 'B' )
         a_pin.close()
         self.assertTrue( a_pin.closed() )
         file_descriptor_number = a_pin.fileno()
         self.assertEqual(file_descriptor_number, None)
 
     def test_write_to_closed_pin_raises_ValueError_exception(self):
-        a_pin = pin.PinWaitableReader( pin.PinId.p1_gpio_gen1(), 'B' )
+        a_pin = pin.PinBlockingReader( pin.PinId.p1_gpio_gen1(), 'B' )
         a_pin.close()
         self.assertTrue( a_pin.closed() )
         with self.assertRaises( ValueError ):
             value = a_pin.read()
 
     def test_wait_on_closed_pin_raises_ValueError_exception(self):
-        a_pin = pin.PinWaitableReader( pin.PinId.p1_gpio_gen1(), 'B' )
+        a_pin = pin.PinBlockingReader( pin.PinId.p1_gpio_gen1(), 'B' )
         a_pin.close()
         self.assertTrue( a_pin.closed() )
         with self.assertRaises( ValueError ):
             value = a_pin.wait()
 
     def test_reset_on_closed_pin_raises_ValueError_exception(self):
-        a_pin = pin.PinWaitableReader( pin.PinId.p1_gpio_gen1(), 'B' )
+        a_pin = pin.PinBlockingReader( pin.PinId.p1_gpio_gen1(), 'B' )
         a_pin.close()
         self.assertTrue( a_pin.closed() )
         with self.assertRaises( ValueError ):
@@ -263,7 +263,7 @@ class PinWaitableReaderSystemTests(unittest.TestCase):
 
     def test_open_in_with_and_closed_after(self):
         outside_value = None
-        with pin.PinWaitableReader( pin.PinId.p1_gpio_gen1(), 'B' ) as p:
+        with pin.PinBlockingReader( pin.PinId.p1_gpio_gen1(), 'B' ) as p:
             outside_value = p
             self.assertFalse( p.closed() )
             self.assertFalse( outside_value.closed() )
@@ -308,14 +308,14 @@ class OpenFunctionSystemTests(unittest.TestCase):
     def test_open_pin_empty_mode_creates_PinReader(self):
         self.assertIsInstance(pin.open_pin(pin.PinId.p1_gpio_gen0(),''),pin.PinReader)
 
-    def test_open_pin_for_reading_waitonfallingedge_creates_PinWaitableReader(self):
-        self.assertIsInstance(pin.open_pin(pin.PinId.p1_gpio_gen0(),'rF'),pin.PinWaitableReader)
+    def test_open_pin_for_reading_waitonfallingedge_creates_PinBlockingReader(self):
+        self.assertIsInstance(pin.open_pin(pin.PinId.p1_gpio_gen0(),'rF'),pin.PinBlockingReader)
 
-    def test_open_pin_for_reading_waitonrisingedge_creates_PinWaitableReader(self):
-        self.assertIsInstance(pin.open_pin(pin.PinId.p1_gpio_gen0(),'rR'),pin.PinWaitableReader)
+    def test_open_pin_for_reading_waitonrisingedge_creates_PinBlockingReader(self):
+        self.assertIsInstance(pin.open_pin(pin.PinId.p1_gpio_gen0(),'rR'),pin.PinBlockingReader)
 
-    def test_open_pin_for_reading_waitonbothedges_creates_PinWaitableReader(self):
-        self.assertIsInstance(pin.open_pin(pin.PinId.p1_gpio_gen0(),'rB'),pin.PinWaitableReader)
+    def test_open_pin_for_reading_waitonbothedges_creates_PinBlockingReader(self):
+        self.assertIsInstance(pin.open_pin(pin.PinId.p1_gpio_gen0(),'rB'),pin.PinBlockingReader)
 
     def test_open_pin_for_reading_badwaitmode_fails(self):
         with self.assertRaises( error.PinBlockModeInvalidError ):
@@ -381,7 +381,7 @@ class XPinIOInteractiveSystemTests(unittest.TestCase):
         print "Test complete.\n"
 
     def test_150_read_from_open_pin_blocking_returns_True_or_False(self):
-        a_pin = pin.PinWaitableReader( pin.PinId.p1_gpio_gclk(), 'B' )
+        a_pin = pin.PinBlockingReader( pin.PinId.p1_gpio_gclk(), 'B' )
         self.assertFalse( a_pin.closed() )
         # Read a value from the input pin and check it is False or True.
         # Output this value to the console so if hardware pin GPIO_GCLK
@@ -389,7 +389,7 @@ class XPinIOInteractiveSystemTests(unittest.TestCase):
         # you can check the read value concurs with the switch state.
         value = a_pin.read()
         self.assertIn(value, [False, True])
-        print '\nPinWaitableReader object on GPIO_GCLK: read value:', value
+        print '\nPinBlockingReader object on GPIO_GCLK: read value:', value
         print "Test complete.\n"
 
     def test_200_read_from_open_pin_non_blocking_more_than_once_returns_expected_results(self):
@@ -406,14 +406,14 @@ class XPinIOInteractiveSystemTests(unittest.TestCase):
         print "Test complete.\n"
 
     def test_250_blocking_reader_time_out_expiration_returns_None(self):
-        a_pin = pin.PinWaitableReader( pin.PinId.p1_gpio_gclk(), 'B' )
+        a_pin = pin.PinBlockingReader( pin.PinId.p1_gpio_gclk(), 'B' )
         self.assertFalse( a_pin.closed() )
         a_pin.reset() # clear initially signalled notification
         self.assertIsNone( a_pin.wait(0.001) )
         self.assertFalse( a_pin.closed() )
 
     def test_300_blocking_reader_wait_both_no_time_out_notifies_and_reads_results_repeatedly_on_any_state_change(self):
-        a_pin = pin.PinWaitableReader( pin.PinId.p1_gpio_gclk(), 'B' )
+        a_pin = pin.PinBlockingReader( pin.PinId.p1_gpio_gclk(), 'B' )
         self.assertFalse( a_pin.closed() )
         print "\nChange value of GPIO_GCLK (Raspberry Pi P1 pin7) twice (e,g. press and release)..."
         a_pin.reset()
@@ -422,7 +422,7 @@ class XPinIOInteractiveSystemTests(unittest.TestCase):
         value = a_pin.read()
         self.assertIn(value, [False, True])
         self.assertEqual( a_pin.read(), value )
-        print 'PinWaitableReader object on GPIO_GCLK: read value:', value
+        print 'PinBlockingReader object on GPIO_GCLK: read value:', value
         time.sleep(0.05)
         a_pin.reset()
         changed_object = a_pin.wait(1000)
@@ -430,11 +430,11 @@ class XPinIOInteractiveSystemTests(unittest.TestCase):
         value = a_pin.read()
         self.assertIn(value, [False, True])
         self.assertEqual( a_pin.read(), value )
-        print 'PinWaitableReader object on GPIO_GCLK: read value:', value
+        print 'PinBlockingReader object on GPIO_GCLK: read value:', value
         print "Test complete.\n"
 
     def test_350_blocking_reader_wait_rising_edge_no_time_out_notifies_and_reads_results_repeatedly_on_0_1_state_change(self):
-        a_pin = pin.PinWaitableReader( pin.PinId.p1_gpio_gclk(), 'R' )
+        a_pin = pin.PinBlockingReader( pin.PinId.p1_gpio_gclk(), 'R' )
         self.assertFalse( a_pin.closed() )
         print "\nChange value of GPIO_GCLK (Raspberry Pi P1 pin 7) from 0 to 1 twice (e.g. press, release, press, release)..."
         a_pin.reset()
@@ -442,18 +442,18 @@ class XPinIOInteractiveSystemTests(unittest.TestCase):
         value = a_pin.read()
         self.assertEqual(value, True)
         self.assertEqual( a_pin.read(), value )
-        print 'PinWaitableReader object on GPIO_GCLK: read value:', value
+        print 'PinBlockingReader object on GPIO_GCLK: read value:', value
         a_pin.reset()
         a_pin.wait()
         value = a_pin.read()
         self.assertEqual(value, True)
         self.assertEqual( a_pin.read(), value )
-        print 'PinWaitableReader object on GPIO_GCLK: read value:', value
+        print 'PinBlockingReader object on GPIO_GCLK: read value:', value
         print "Test complete.\n"
 
     def test_400_blocking_reader_wait_falling_edge_no_time_out_notifies_and_reads_results_repeatedly_on_1_0_state_change(self):
         time.sleep(0.3)
-        a_pin = pin.PinWaitableReader( pin.PinId.p1_gpio_gclk(), 'F' )
+        a_pin = pin.PinBlockingReader( pin.PinId.p1_gpio_gclk(), 'F' )
         self.assertFalse( a_pin.closed() )
         print "\nChange value of GPIO_GCLK (Raspberry Pi P1 pin 7) from 1 to 0 twice (e.g. press, release, press, release)..."
         a_pin.reset()
@@ -461,13 +461,13 @@ class XPinIOInteractiveSystemTests(unittest.TestCase):
         value = a_pin.read()
         self.assertEqual(value, False)
         self.assertEqual( a_pin.read(), value )
-        print 'PinWaitableReader object on GPIO_GCLK: read value:', value
+        print 'PinBlockingReader object on GPIO_GCLK: read value:', value
         a_pin.reset()
         a_pin.wait()
         value = a_pin.read()
         self.assertEqual(value, False)
         self.assertEqual( a_pin.read(), value )
-        print 'PinWaitableReader object on GPIO_GCLK: read value:', value
+        print 'PinBlockingReader object on GPIO_GCLK: read value:', value
         print "Test complete.\n"
 
 if __name__ == '__main__':
