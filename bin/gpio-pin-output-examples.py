@@ -37,8 +37,7 @@ if __name__ == '__main__':
             time.sleep(0.2)
 
     except error.GPIOError:
-        print "Oops unexpected GPIO related error!"
+        print "Oops unexpected GPIO related error:",\
+                e.__class__.__name__,':', e
     except ValueError:
         print "Oops unexpected value error!"
-    except Exception:
-        print "Oops really unexpected error of unanticipated error type!"

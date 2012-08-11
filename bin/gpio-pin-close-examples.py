@@ -46,9 +46,8 @@ if __name__ == '__main__':
     # by checking return value from pin.force_free_pin:
         freed_pin_id = pin.force_free_pin(pin.PinId.p1_gpio_gen1())
         assert( freed_pin_id==None )
-    except error.GPIOError:
-        print "Oops unexpected GPIO related error!"
+    except error.GPIOError,e:
+        print "Oops unexpected GPIO related error:\n   ",\
+                e.__class__.__name__,':', e
     except ValueError:
         print "Oops unexpected value error!"
-    except Exception:
-        print "Oops really unexpected error of unanticipated error type!"
