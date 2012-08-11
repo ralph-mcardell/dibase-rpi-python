@@ -18,7 +18,13 @@ from gpioerror import PinOpenModeInvalidError
 from gpioerror import PinBlockModeInvalidError
 from gpioerror import PinDirectionModeInvalidError
 from pinid import PinId
-from sysfspaths import Paths
+from sysfspaths import export_path as sysfs_export_path
+from sysfspaths import unexport_path as sysfs_unexport_path
+from sysfspaths import pin_path as sysfs_pin_path
+from sysfspaths import direction_path as sysfs_direction_path
+from sysfspaths import edgemode_path as sysfs_edgemode_path
+from sysfspaths import value_path as sysfs_value_path
+
 from gpiobase import GPIOReaderBase
 from gpiobase import GPIOWriterBase
 from gpiobase import GPIOBlockingReaderBase
@@ -41,9 +47,9 @@ def force_free_pin( pin_id ):
         Throws a pin.PinIdInvalidError if the pin_id is invalid
     '''
     unexported = None
-    if os.path.exists(Paths.pin_path( pin_id )):
+    if os.path.exists(sysfs_pin_path( pin_id )):
         unexported = pin_id
-        with open(Paths.unexport_path(), 'w') as unexport_file:
+        with open(sysfs_unexport_path(), 'w') as unexport_file:
             unexport_file.write( str(pin_id) )
     return unexported
 
@@ -269,19 +275,19 @@ class _PinIOBase(object):
         self.cb_validate_init_parameters(pin_id, direction_mode, blocking_mode)
 
         # export
-        with open(Paths.export_path(), 'w') as export_file:
+        with open(sysfs_export_path(), 'w') as export_file:
             export_file.write( str(pin_id) )
 
         # set edge mode file's value
-        with open(Paths.edgemode_path(pin_id), 'w') as edge_file:
+        with open(sysfs_edgemode_path(pin_id), 'w') as edge_file:
             edge_file.write( blocking_mode.edge_mode_value() )
 
         # set i/o direction
-        with open(Paths.direction_path(pin_id), 'w') as direction_file:
+        with open(sysfs_direction_path(pin_id), 'w') as direction_file:
             direction_file.write(direction_mode.direction_mode_value())
 
         # open value 'file' for reading/writing depending on direction mode
-        self.__value_file = open( Paths.value_path(pin_id)\
+        self.__value_file = open( sysfs_value_path(pin_id)\
                                 , direction_mode.open_mode_value()+'b'
                                 )
 
@@ -308,7 +314,7 @@ class _PinIOBase(object):
             validated, handling types: PinId, DirectionMode and BlockMode.
         '''
         # Raise a PinInUseError if pin is currently exported
-        if os.path.exists(Paths.pin_path(pin_id)):
+        if os.path.exists(sysfs_pin_path(pin_id)):
             raise PinInUseError
 
     def closed(self): 
@@ -326,8 +332,8 @@ class _PinIOBase(object):
             self.__value_file = None
             # Unexport if exported (should be unless somone sneaking around
             # behind our backs!)
-            if os.path.exists(Paths.pin_path( self.__pin_id )):
-                with open(Paths.unexport_path(), 'w') as unexport_file:
+            if os.path.exists(sysfs_pin_path( self.__pin_id )):
+                with open(sysfs_unexport_path(), 'w') as unexport_file:
                     unexport_file.write( str(self.__pin_id) )
             self.__pin_id = None
 
