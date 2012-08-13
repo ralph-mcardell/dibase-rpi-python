@@ -32,3 +32,15 @@ class PinBlockModeInvalidError(PinOpenModeInvalidError):
 class PinDirectionModeInvalidError(PinOpenModeInvalidError):
     """Invalid read-write mode, expected 'r' or 'w'"""
     pass
+
+class PinGroupOpenModeInvalidError(PinOpenModeInvalidError):
+    """Invalid open mode, expected 'w'|'r' + 'N'|'R'|'F'|'B' + 'I'|'S'"""
+    pass
+
+class PinGroupFormatModeInvalidError(PinGroupOpenModeInvalidError):
+    """Invalid pin group format mode, expedcted 'I' or 'S'"""
+    pass
+
+class PinGroupIdsInvalidError(GPIOError):
+    """Invalid group of pin ids, expected non-empty iterable sequence"""
+    pass
