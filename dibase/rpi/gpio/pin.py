@@ -3,7 +3,8 @@
 
     Operations on single GPIO pins.
     Uses userspace sys filesystem GPIO interface.
-    Provides a pin type and operations on instances modelled after file objects.
+    Provides a set of pin IO types and operations on instances
+    modelled after file objects.
 
     Developed by R.E. McArdell / Dibase Limited.
     Copyright (c) 2012 Dibase Limited
@@ -391,8 +392,8 @@ class PinWriter(_PinIOBase, GPIOWriterBase):
         if self.closed():
             raise ValueError
         value = 0 if value == '0' else value
-        self._value_file().seek(0)
         self._value_file().write('1' if value else '0')
+        self._value_file().seek(0) # seek(0) 'flushes' the value to the pin
 
 class PinReader(_PinIOBase, GPIOReaderBase):
     '''
