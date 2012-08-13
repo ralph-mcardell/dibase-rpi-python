@@ -321,7 +321,7 @@ class _PinIOBase(object):
         ''' Returns True if the Pin has been closed, False if it is open '''
         return self.__value_file == None
 
-    def close( self ):
+    def close(self):
         '''
             Closes the pin. Can be called repeatedly safely on the same
             object. Closes pin's sys filesystem value file and unexports
@@ -337,13 +337,24 @@ class _PinIOBase(object):
                     unexport_file.write( str(self.__pin_id) )
             self.__pin_id = None
 
+    def file_descriptors(self):
+        '''
+            Returns a list containing the managed GPIO pin sysfs value file
+            object's file descriptor value or an empty list if the object is
+            closed.
+        '''
+        if (not self.closed()):
+            return [self.__value_file.fileno()]
+        else:
+            return []
+
     def fileno(self):
         '''
             If the Pin IO object is open return the underlying file
             descriptor number of the pin's sys filesystem value file. If the
             object is closed then returns None.
         '''
-        if (not self.closed() ):
+        if (not self.closed()):
             return self.__value_file.fileno()
         else:
             return None

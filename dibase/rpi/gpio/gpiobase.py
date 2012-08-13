@@ -25,38 +25,42 @@ class GPIOBase(object):
     __metaclass__ = abc.ABCMeta
 
     @abc.abstractmethod
-    def close( self ):
+    def close(self):
         ''' Close open GPIO resource (e.g. an output pin) '''
         pass
 
     @abc.abstractmethod
-    def closed( self ):
+    def closed(self):
         ''' Returns a True/False indicating whether an instance is closed '''
         pass
 
     @abc.abstractmethod
-    def fileno( self ):
+    def file_descriptors(self):
         '''
-            Returns underlying integer file descriptor number (if any)
-            associated with resource.
+            Returns a list containing underlying integer file descriptor
+            numbers (if any) associated with resource.
+
+            If there are no file descriptors associated with the object
+            (e.g. it is closed) an empty list should be returned.
+
+            If there is only one file descriptor then a list containing a 
+            single item should be returned.
         '''
         pass
 
     @abc.abstractmethod
-    def readable( self ):
-        ''' Returns a True if resource can be read (input) '''
+    def readable(self):
+        '''Returns True if resource can be read (input)'''
         pass
 
     @abc.abstractmethod
-    def writable( self ):
-        ''' Returns a True if resource can be written (output) '''
+    def writable(self):
+        '''Returns True if resource can be written (output)'''
         pass
 
     @abc.abstractmethod
-    def blocking( self ):
-        ''' 
-            Returns a True if IO blocks, False if it does not.
-        '''
+    def blocking(self):
+        ''' Returns True if IO blocks, False if it does not.'''
         pass
 
 class GPIOReaderBase(GPIOBase):
@@ -67,15 +71,15 @@ class GPIOReaderBase(GPIOBase):
     '''
     __metaclass__ = abc.ABCMeta
 
-    def readable( self ):
+    def readable(self):
         ''' Returns True: readers are readable! '''
         return True
 
-    def writable( self ):
+    def writable(self):
         ''' Returns False: not a reader-writer '''
         return False
 
-    def blocking( self ):
+    def blocking(self):
         ''' 
             Returns False - use GPIOBlockingReaderBase for 
             blocking readers
@@ -83,7 +87,7 @@ class GPIOReaderBase(GPIOBase):
         return False
 
     @abc.abstractmethod
-    def read( self ):
+    def read(self):
         '''
             Should return one or more values indicating state of pin bit(s)
             each bit reflects momentary state of GPIO bits managed by
@@ -100,20 +104,20 @@ class GPIOWriterBase(GPIOBase):
     '''
     __metaclass__ = abc.ABCMeta
 
-    def readable( self ):
+    def readable(self):
         ''' Returns False: not a reader-writer '''
         return False
 
-    def writable( self ):
+    def writable(self):
         ''' Returns True: writers are writable! '''
         return True
 
-    def blocking( self ):
+    def blocking(self):
         ''' Returns a False - output does not block. '''
         return False
 
     @abc.abstractmethod
-    def write( self, value ):
+    def write(self, value):
         '''
             Outputs integer - each bit reflects updated (latched) state
             of GPIO bits managed by reasource
@@ -130,20 +134,20 @@ class GPIOBlockingReaderBase(GPIOBase):
     '''
     __metaclass__ = abc.ABCMeta
 
-    def readable( self ):
+    def readable(self):
         ''' Returns True: readers are readable! '''
         return True
 
-    def writable( self ):
+    def writable(self):
         ''' Returns False: not a reader-writer '''
         return False
 
-    def blocking( self ):
+    def blocking(self):
         ''' Returns True - this is a blocking type. '''
         return True
 
     @abc.abstractmethod
-    def read( self, timeout=None ):
+    def read(self, timeout=None):
         '''
             Waits until an edge event occurs on a GPIO pin or the timeout
             value expires.

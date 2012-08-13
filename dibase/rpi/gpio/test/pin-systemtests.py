@@ -70,23 +70,39 @@ class PinWriterSystemTests(unittest.TestCase):
         a_pin.close()
         self.assertTrue( a_pin.closed() )
 
-    def test_fileno_produces_int_on_open_pin(self):
-        a_pin = pin.PinWriter( pin.PinId.p1_gpio_gen0() )
+    def test_file_descriptors_produces_list_of_1_int_on_open_pin(self):
+        a_pin = pin.PinWriter(pin.PinId.p1_gpio_gen0())
         self.assertFalse( a_pin.closed() )
+        file_descriptor_list = a_pin.file_descriptors()
+        self.assertTrue(file_descriptor_list)
+        self.assertEqual(len(file_descriptor_list), 1)
+        self.assertIsInstance(file_descriptor_list[0], int)
+        a_pin.close()
+
+    def test_file_descriptors_returns_empty_list_on_closed_pin(self):
+        a_pin = pin.PinWriter(pin.PinId.p1_gpio_gen0())
+        a_pin.close()
+        self.assertTrue(a_pin.closed())
+        file_descriptor_list = a_pin.file_descriptors()
+        self.assertFalse(file_descriptor_list)
+
+    def test_fileno_produces_int_on_open_pin(self):
+        a_pin = pin.PinWriter(pin.PinId.p1_gpio_gen0())
+        self.assertFalse(a_pin.closed())
         file_descriptor_number = a_pin.fileno()
-        self.assertNotEqual(file_descriptor_number, None)
-        self.assertIsInstance( file_descriptor_number, int )
+        self.assertIsNotNone(file_descriptor_number)
+        self.assertIsInstance(file_descriptor_number, int)
         a_pin.close()
 
     def test_fileno_produces_None_on_closed_pin(self):
-        a_pin = pin.PinWriter( pin.PinId.p1_gpio_gen0() )
+        a_pin = pin.PinWriter(pin.PinId.p1_gpio_gen0())
         a_pin.close()
-        self.assertTrue( a_pin.closed() )
+        self.assertTrue(a_pin.closed())
         file_descriptor_number = a_pin.fileno()
-        self.assertEqual(file_descriptor_number, None)
+        self.assertIsNone(file_descriptor_number)
 
     def test_write_to_closed_pin_raises_ValueError_exception(self):
-        a_pin = pin.PinWriter( pin.PinId.p1_gpio_gen0() )
+        a_pin = pin.PinWriter(pin.PinId.p1_gpio_gen0())
         a_pin.close()
         self.assertTrue( a_pin.closed() )
         with self.assertRaises( ValueError ):
@@ -138,7 +154,7 @@ class PinReaderSystemTests(unittest.TestCase):
         self.assertFalse( a_pin.closed() )
 
     def test_multiple_close_does_nothing_bad(self):
-        a_pin = pin.PinReader( pin.PinId.p1_gpio_gen1() )
+        a_pin = pin.PinReader(pin.PinId.p1_gpio_gen1())
         self.assertFalse( a_pin.closed() )
         a_pin.close()
         self.assertTrue( a_pin.closed() )
@@ -147,20 +163,36 @@ class PinReaderSystemTests(unittest.TestCase):
         a_pin.close()
         self.assertTrue( a_pin.closed() )
 
-    def test_fileno_produces_int_on_open_pin(self):
-        a_pin = pin.PinReader( pin.PinId.p1_gpio_gen1() )
+    def test_file_descriptors_produces_list_of_1_int_on_open_pin(self):
+        a_pin = pin.PinReader(pin.PinId.p1_gpio_gen1())
         self.assertFalse( a_pin.closed() )
+        file_descriptor_list = a_pin.file_descriptors()
+        self.assertTrue(file_descriptor_list)
+        self.assertEqual(len(file_descriptor_list), 1)
+        self.assertIsInstance(file_descriptor_list[0], int)
+        a_pin.close()
+
+    def test_file_descriptors_returns_empty_list_on_closed_pin(self):
+        a_pin = pin.PinReader(pin.PinId.p1_gpio_gen1())
+        a_pin.close()
+        self.assertTrue(a_pin.closed())
+        file_descriptor_list = a_pin.file_descriptors()
+        self.assertFalse(file_descriptor_list)
+
+    def test_fileno_produces_int_on_open_pin(self):
+        a_pin = pin.PinReader(pin.PinId.p1_gpio_gen1())
+        self.assertFalse(a_pin.closed())
         file_descriptor_number = a_pin.fileno()
-        self.assertNotEqual(file_descriptor_number, None)
-        self.assertIsInstance( file_descriptor_number, int )
+        self.assertIsNotNone(file_descriptor_number)
+        self.assertIsInstance(file_descriptor_number, int)
         a_pin.close()
 
     def test_fileno_produces_None_on_closed_pin(self):
-        a_pin = pin.PinReader( pin.PinId.p1_gpio_gen1() )
+        a_pin = pin.PinReader(pin.PinId.p1_gpio_gen1())
         a_pin.close()
         self.assertTrue( a_pin.closed() )
         file_descriptor_number = a_pin.fileno()
-        self.assertEqual(file_descriptor_number, None)
+        self.assertIsNone(file_descriptor_number)
 
     def test_write_to_closed_pin_raises_ValueError_exception(self):
         a_pin = pin.PinReader( pin.PinId.p1_gpio_gen1() )
@@ -216,7 +248,7 @@ class PinBlockingReaderSystemTests(unittest.TestCase):
         self.assertFalse( a_pin.closed() )
 
     def test_multiple_close_does_nothing_bad(self):
-        a_pin = pin.PinBlockingReader( pin.PinId.p1_gpio_gen1(), 'B' )
+        a_pin = pin.PinBlockingReader(pin.PinId.p1_gpio_gen1(), 'B')
         self.assertFalse( a_pin.closed() )
         a_pin.close()
         self.assertTrue( a_pin.closed() )
@@ -225,20 +257,36 @@ class PinBlockingReaderSystemTests(unittest.TestCase):
         a_pin.close()
         self.assertTrue( a_pin.closed() )
 
-    def test_fileno_produces_int_on_open_pin(self):
-        a_pin = pin.PinBlockingReader( pin.PinId.p1_gpio_gen1(), 'B' )
+    def test_file_descriptors_produces_list_of_1_int_on_open_pin(self):
+        a_pin = pin.PinBlockingReader(pin.PinId.p1_gpio_gen1(), 'B')
         self.assertFalse( a_pin.closed() )
+        file_descriptor_list = a_pin.file_descriptors()
+        self.assertTrue(file_descriptor_list)
+        self.assertEqual(len(file_descriptor_list), 1)
+        self.assertIsInstance(file_descriptor_list[0], int)
+        a_pin.close()
+
+    def test_file_descriptors_returns_empty_list_on_closed_pin(self):
+        a_pin = pin.PinBlockingReader(pin.PinId.p1_gpio_gen1(), 'B')
+        a_pin.close()
+        self.assertTrue(a_pin.closed())
+        file_descriptor_list = a_pin.file_descriptors()
+        self.assertFalse(file_descriptor_list)
+
+    def test_fileno_produces_int_on_open_pin(self):
+        a_pin = pin.PinBlockingReader(pin.PinId.p1_gpio_gen1(), 'B')
+        self.assertFalse(a_pin.closed())
         file_descriptor_number = a_pin.fileno()
-        self.assertNotEqual(file_descriptor_number, None)
-        self.assertIsInstance( file_descriptor_number, int )
+        self.assertIsNotNone(file_descriptor_number)
+        self.assertIsInstance(file_descriptor_number, int)
         a_pin.close()
 
     def test_fileno_produces_None_on_closed_pin(self):
-        a_pin = pin.PinBlockingReader( pin.PinId.p1_gpio_gen1(), 'B' )
+        a_pin = pin.PinBlockingReader(pin.PinId.p1_gpio_gen1(), 'B')
         a_pin.close()
         self.assertTrue( a_pin.closed() )
         file_descriptor_number = a_pin.fileno()
-        self.assertEqual(file_descriptor_number, None)
+        self.assertIsNone(file_descriptor_number)
 
     def test_read_to_closed_pin_raises_ValueError_exception(self):
         a_pin = pin.PinBlockingReader( pin.PinId.p1_gpio_gen1(), 'B' )
