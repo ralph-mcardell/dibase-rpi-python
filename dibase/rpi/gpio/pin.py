@@ -388,7 +388,7 @@ class PinWriter(_PinIOBase, GPIOWriterBase):
             value is a value that can be interpreted as True (1 output) or
             False (0 output). A special case is that '0', normally considered
             True, is considered a False value and therefore causes a 0 output.
-         '''
+        '''
         if self.closed():
             raise ValueError
         value = 0 if value == '0' else value
@@ -413,7 +413,7 @@ class PinReader(_PinIOBase, GPIOReaderBase):
         '''
             Returns a True if 1 read from an open pin GPIO line, else False.
             Raises a ValueError if the object is closed.
-       '''
+        '''
         if self.closed():
             raise ValueError
 
