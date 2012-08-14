@@ -270,13 +270,89 @@ class PinListWriter(_PinGroupIOBase, GPIOWriterBase):
             raise TypeError
 
 
-class PinWordReader(object):#(_PinGroupIOBase, GPIOReaderBase):
+class PinWordReader(_PinGroupIOBase, GPIOReaderBase):
+    '''
+        Concrete GPIOReaderBase implementation for a group of GPIO pins.
+        It handles reading 0 or 1 values from the related GPIO pins presented
+        as bits in an integer. Each GPIO pin in the group will have been
+        exported and set up for input as part of the initialisation.
+    '''
     def __init__(self, pin_ids):
-        pass
+        '''
+            Creates a group of GPIO pins for reading (input) with read pin
+            bit values expressed as bits in an integer with bit 0 indicating
+            the value for the first pin in the group, and bit 1 the next and
+            so on. Pins are ordered arounding to the position of their id in
+            the pin_ids argument.
 
-class PinListReader(object):#(_PinGroupIOBase, GPIOReaderBase):
+            pin_ids should be an iterable sequence of pin id values of the
+            pins to be in group. It should contain at least one value
+            otherwise a gpioerror.PinGroupIdsInvalidError exception is
+            raised. Additionally any exception that might be raised by
+            pin.open_pin may be raised other than those relating to bad mode
+            values.
+            
+            On successful return an open pin group object will be open and
+            ready to read from. Otherwise it will be closed.
+        '''
+        super(PinWordReader, self).__init__(pin_ids, 'rN')
+        self._pin_bit_range = range(len(self._pins))
+
+    def read(self):
+        '''
+            Returns an integer whose bits represent the read state of all
+            bits in the pin group with bit 0 representing the pin specified by
+            the 0th element of pin_ids argument passed to __init__ and so on.
+
+            Note that read polls the pin states and does not wait for any
+            state change event to occur.
+        '''
+        value = 0
+        for bit_number in self._pin_bit_range:
+            value += (self._pins[bit_number].read() << bit_number)
+        return value
+
+class PinListReader(_PinGroupIOBase, GPIOReaderBase):
+    '''
+        Concrete GPIOReaderBase implementation for a group of GPIO pins.
+        It handles reading 0 or 1 values from the related GPIO pins presented
+        as Boolean value elements in an iterable sequence. Each GPIO pin in
+        the group will have been exported and set up for output as part of
+        the initialisation.
+    '''
     def __init__(self, pin_ids):
-        pass
+        '''
+            Creates a group of GPIO pins for reading (input) with read pin
+            bit values expressed as Boolean values in an interable
+            sequence ordered as per the pin id sequence passed as pin_ids.
+
+            pin_ids should be an iterable sequence of pin id values of the
+            pins to be in group. It should contain at least one value
+            otherwise a gpioerror.PinGroupIdsInvalidError exception is
+            raised. Additionally any exception that might be raised by
+            pin.open_pin may be raised other than those relating to bad mode
+            values.
+            
+            On successful return an open pin group object will be open and
+            ready to read from. Otherwise it will be closed.
+        '''
+        super(PinListReader, self).__init__(pin_ids, 'rN')
+        self._pin_bit_range = range(len(self._pins))
+
+    def read(self):
+        '''
+            Returns a list of Boolean values whose elements represent the
+            read state of all bits in the pin group with the 0th element
+            representing the pin specified by the 0th element of pin_ids
+            argument passed to __init__ and so on.
+
+            Note that read polls the pin states and does not wait for any
+            state change event to occur.
+        '''
+        value = []
+        for bit_number in self._pin_bit_range:
+            value.append(self._pins[bit_number].read())
+        return value
 
 class PinWordBlockingReader(object):#(_PinGroupIOBase, GPIOBlockingReaderBase):
     def __init__(self, pin_ids, blocking_mode):
