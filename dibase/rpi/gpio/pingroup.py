@@ -83,29 +83,50 @@ class FormatMode(object):
         '''
         return self.__value
 
-class PinWordWriter(GPIOWriterBase):
-    def __init__(self, pin_ids):
-        self.__pins = []
+class _PinGroupIOBase(object):
+    '''
+        Internal mixin base class for concrete Pin group IO classes.
+        Provides common functionality.
+    '''
+    def __init__(self, pin_ids, mode):
+        '''
+            Common initalisation for GPIO pin group IO classes.
+
+            pin_ids should be an iterable sequence of pin id values of the
+            pins to be in group. It should contain at least one value
+            otherwise a gpioerror.PinGroupIdsInvalidError exception is
+            raised.
+            
+            mode is the required open mode for each _single_ pin in the pin
+            group and is provided by sub classes.
+            
+            Additionally any exception that might be raised by pin.open_pin
+            may be raised (other than those relating to bad mode values
+            unless such a bad mode is passed from sub classes).
+            
+            On successful return an open pin group object will be open.
+        '''
+        self._pins = []
         if not (pin_ids and isinstance(pin_ids, collections.Iterable)):
             raise PinGroupIdsInvalidError
         for id in pin_ids:
             try:
-                p = open_pin(id, 'wN')
-                self.__pins.append(p)
+                p = open_pin(id, mode)
+                self._pins.append(p)
             except GPIOError, e:
             # Close open pins ASAP - do not wait for __del__ to be called
-                for p in self.__pins:
+                for p in self._pins:
                     p.close()
-                self.__pins = []
+                self._pins = []
                 raise e
-        self.__cached_value = None
 
     def __del__(self):
         '''Calls close to try to ensure pin group is cleanly freed up'''
-        if self.__pins:
+        if self._pins:
             self.close()
 
     def __enter__(self):
+        '''Returns value of self'''
         return self
 
     def __exit__(self, exception_type, exception_value, traceback):
@@ -113,51 +134,155 @@ class PinWordWriter(GPIOWriterBase):
         self.close()
 
     def close(self):
+        '''If not already closed then closes all pins in the group'''
         if not self.closed():
-            for p in self.__pins:
+            for p in self._pins:
                 p.close()
 
     def closed(self):
-        return self.__pins[0].closed()
+        '''Returns True if the pin group is closed, False if it is open'''
+        return self._pins[0].closed()
 
     def file_descriptors(self):
+        '''
+            If an instance is closed returns an empty list otherwise returns
+            a list containing the file descriptor of the open value
+            file of each pin of the group in the order of the pin ids passed
+            to __init__.
+        '''
         if self.closed():
             return []
         else:
             fds = []
-            for p in self.__pins:
+            for p in self._pins:
                 fds.append(p.fileno())
             return fds
-        
+
+class PinWordWriter(_PinGroupIOBase, GPIOWriterBase):
+    '''
+        Concrete GPIOWriterBase implementation for a group of GPIO pins.
+        It handles writing 0 or 1 values to the related GPIO pins presented
+        as bits in an integer. Each GPIO pin in the group will have been
+        exported and set up for output as part of the initialisation.
+    '''
+    def __init__(self, pin_ids):
+        '''
+            Creates a group of GPIO pins for writing (output) with pin bit
+            values expressed to write as bits in an integer with bit 0
+            indicating the value for the first pin in the group, and bit 1
+            the next and so on. Pins are ordered arounding to the position
+            of their id in the pin_ids argument.
+
+            pin_ids should be an iterable sequence of pin id values of the
+            pins to be in group. It should contain at least one value
+            otherwise a gpioerror.PinGroupIdsInvalidError exception is
+            raised. Additionally any exception that might be raised by
+            pin.open_pin may be raised other than those relating to bad mode
+            values.
+            
+            On successful return an open pin group object will be open and
+            ready to write to. Otherwise it will be closed.
+        '''
+        super(PinWordWriter, self).__init__(pin_ids, 'wN')
+        self._cached_value = None
+        self._pin_bit_range = range(len(self._pins))
+        self._pin_max_value = 2**len(self._pins)-1
+
     def write(self, value):
+        '''
+            Writes the value to the pins in the group.
+
+            The passed value should be a positive integer in the range
+            [0, 2**<number of pins inthe group>). Each pin's value is
+            determined by one bit of value with bit 0 indicating the required
+            state of teh first pin in ther group, bit 1 the 2nd pin in the
+            group and so on.
+
+            Raises Value error if value is out of range or a string that
+            cannot be converted to an integer; TypeError is raised if value
+            is not a string or a number.
+        '''
         value = int(value)
-        if ( value>=0 and value<2**len(self.__pins) ):
-            if self.__cached_value==None:
-                self.__cached_value = ~value & ((2**len(self.__pins))-1)
-            for bit_number in range(len(self.__pins)):
-                if ((value >> bit_number)&1) != ((self.__cached_value >> bit_number)&1):
-                    self.__pins[bit_number].write(((value >> bit_number)&1)!=0)
-            self.__cached_value = value
+        if value>=0 and value<=self._pin_max_value:
+            if self._cached_value==None:
+                self._cached_value = ~value & self._pin_max_value
+            for bit_number in self._pin_bit_range:
+                mask = (1<<bit_number)
+                value_bit = value&mask
+                if value_bit != (self._cached_value&mask):
+                    self._pins[bit_number].write(value_bit)
+            self._cached_value = value
         else:
             raise ValueError
 
-class PinListWriter(object):#(GPIOWriterBase):
+class PinListWriter(_PinGroupIOBase, GPIOWriterBase):
+    '''
+        Concrete GPIOWriterBase implementation for a group of GPIO pins.
+        It handles writing 0 or 1 values to the related GPIO pins presented
+        as Boolean value elements in an iterable sequence. Each GPIO pin in
+        the group will have been exported and set up for output as part of
+        the initialisation.
+    '''
+    def __init__(self, pin_ids):
+        '''
+            Creates a group of GPIO pins for writing (output) with pin bit
+            values expressed to write as Boolean values in an interable
+            sequence ordered as per the pin id sequence passed as pin_ids.
+
+            pin_ids should be an iterable sequence of pin id values of the
+            pins to be in group. It should contain at least one value
+            otherwise a gpioerror.PinGroupIdsInvalidError exception is
+            raised. Additionally any exception that might be raised by
+            pin.open_pin may be raised other than those relating to bad mode
+            values.
+            
+            On successful return an open pin group object will be open and
+            ready to write to. Otherwise it will be closed.
+        '''
+        super(PinListWriter, self).__init__(pin_ids, 'wN')
+        self._cached_value = None
+        self._pin_bit_range = range(len(self._pins))
+
+    def write(self, value):
+        '''
+            Writes the value to the pins in the group.
+
+            The passed value should be an iterable sequence of Boolean
+            values (or values convertible to Boolean). Each pin's value is
+            determined by one element of value with the first element
+            determining the value written to the pin specified by the first
+            element of the pin_ids argument passed to __init__ and so on.
+
+            Raises TypeError if value is not an iterable sequence of items
+            with the same length as that of the pin_ids argument passed to
+            __init__.
+        '''
+        if isinstance(value, collections.Iterable) and len(value)==len(self._pins):
+            if self._cached_value==None:
+                self._cached_value = []
+                for bit_number in self._pin_bit_range:
+                    self._cached_value.append(not value[bit_number])
+            for bit_number in self._pin_bit_range:
+                if value[bit_number] != self._cached_value[bit_number]:
+                    self._pins[bit_number].write(value[bit_number])
+            self._cached_value = value
+        else:
+            raise TypeError
+
+
+class PinWordReader(object):#(_PinGroupIOBase, GPIOReaderBase):
     def __init__(self, pin_ids):
         pass
 
-class PinWordReader(object):#(GPIOReaderBase):
+class PinListReader(object):#(_PinGroupIOBase, GPIOReaderBase):
     def __init__(self, pin_ids):
         pass
 
-class PinListReader(object):#(GPIOReaderBase):
-    def __init__(self, pin_ids):
-        pass
-
-class PinWordBlockingReader(object):#(GPIOBlockingReaderBase):
+class PinWordBlockingReader(object):#(_PinGroupIOBase, GPIOBlockingReaderBase):
     def __init__(self, pin_ids, blocking_mode):
         pass
 
-class PinListBlockingReader(object):#(GPIOBlockingReaderBase):
+class PinListBlockingReader(object):#(_PinGroupIOBase, GPIOBlockingReaderBase):
     def __init__(self, pin_ids, blocking_mode):
         pass
 

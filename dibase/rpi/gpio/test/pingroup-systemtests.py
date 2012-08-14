@@ -256,6 +256,118 @@ class PinWordWriterSystemTests(unittest.TestCase):
             a_pin_group.write(8)
         a_pin_group.close()
 
+
+class PinListWriterSystemTests(unittest.TestCase):
+    def tearDown(self):
+        cleaned_up = []
+        for v in pinid.RPiPinIdSet.valid_ids():
+            id = pin.force_free_pin(pin.PinId.gpio(v))
+            if (id!=None):
+                cleaned_up.append(id)
+        if ( cleaned_up != [] ):
+            print "\nCleaned up left over exports for pins", cleaned_up
+        self.assertEqual(cleaned_up,[])
+
+    def test_invalid_pin_ids_sequence_fail_pin_creation(self):
+        with self.assertRaises( error.PinGroupIdsInvalidError ):
+            a_pin_group = pingroup.PinListWriter(23)
+        with self.assertRaises( error.PinGroupIdsInvalidError ):
+            a_pin_group = pingroup.PinListWriter(None)
+        with self.assertRaises( error.PinGroupIdsInvalidError ):
+            a_pin_group = pingroup.PinListWriter(1.234)
+        with self.assertRaises( error.PinGroupIdsInvalidError ):
+            a_pin_group = pingroup.PinListWriter(False)
+        with self.assertRaises( error.PinGroupIdsInvalidError ):
+            a_pin_group = pingroup.PinListWriter([])
+
+    def test_invalid_pin_ids_fail_pin_creation(self):
+        with self.assertRaises( error.PinIdInvalidError ):
+            a_pin_group = pingroup.PinListWriter([-1])
+        with self.assertRaises( error.PinIdInvalidError ):
+            a_pin_group = pingroup.PinListWriter(["Nan"])
+        with self.assertRaises( error.PinIdInvalidError ):
+            a_pin_group = pingroup.PinListWriter("Nan") # strings are iterable sequences!
+        with self.assertRaises( error.PinIdInvalidError ):
+            a_pin_group = pingroup.PinListWriter([100000])
+        with self.assertRaises( error.PinIdInvalidError ):
+            a_pin_group = pingroup.PinListWriter([None])
+
+    def test_already_used_pin_id_fails_pin_creation_and_closes_any_open_pins(self):
+        with self.assertRaises( error.PinInUseError ):
+            a_pin_group = pingroup.PinListWriter([4,23,23])
+        # try to open pins 4 & 23 again - if they were not closed when
+        # above group create failed then PinInUseError will be thrown.
+        a_pin_group = pingroup.PinListWriter([23,4])
+
+    def test_close_closes_all_opened_pins(self):
+        a_pin_group = pingroup.PinListWriter([23,4,7])
+        a_pin_group.close()
+        a_pin_group = pingroup.PinListWriter([23,4,7])
+
+    def test_closed_reports_pin_group_state(self):
+        a_pin_group = pingroup.PinListWriter([23,4,7])
+        self.assertFalse(a_pin_group.closed())
+        a_pin_group.close()
+        self.assertTrue(a_pin_group.closed())
+
+    def test_multiple_close_calls_do_nothing_bad(self):
+        a_pin_group = pingroup.PinListWriter([23,4,7])
+        a_pin_group.close()
+        a_pin_group.close()
+        a_pin_group.close()        
+        self.assertTrue(a_pin_group.closed())
+ 
+    def test_pin_group_cloed_on_with_exit(self):
+        outside_pg = None
+        with pingroup.PinListWriter([23,4,7]) as pg:
+            outside_pg = pg
+            self.assertFalse(pg.closed())
+            self.assertFalse(outside_pg.closed())
+        self.assertTrue(outside_pg.closed())
+        pingroup.PinListWriter([23,4,7])
+ 
+    def test_file_descriptors_returns_expected_number_and_type_of_descriptors(self):
+        a_pin_group = pingroup.PinListWriter([23,4,7])
+        a_pin_group_fds = a_pin_group.file_descriptors()
+        self.assertEqual(len(a_pin_group_fds), 3)
+        for fd in a_pin_group_fds:
+            self.assertIsInstance(fd, int)
+
+    def test_file_descriptors_returns_empty_list_if_pin_group_closed(self):
+        a_pin_group = pingroup.PinListWriter([23,4,7])
+        a_pin_group.close()
+        a_pin_group_fds = a_pin_group.file_descriptors()
+        self.assertFalse(a_pin_group_fds)
+
+    def test_write_non_iterable_value_raises_TypeError(self):
+        a_pin_group = pingroup.PinListWriter([23,4,7])
+        with self.assertRaises( TypeError ):
+            a_pin_group.write(1)
+        with self.assertRaises( TypeError ):
+            a_pin_group.write(False)
+        with self.assertRaises( TypeError ):
+            a_pin_group.write(None)
+        with self.assertRaises( TypeError ):
+            a_pin_group.write(set([True, False, True]))
+        a_pin_group.close()
+
+    def test_write_iterable_wrong_number_of_elements_raises_TypeError(self):
+        a_pin_group = pingroup.PinListWriter([23,4,7])
+        with self.assertRaises( TypeError ):
+            a_pin_group.write([])
+        with self.assertRaises( TypeError ):
+            a_pin_group.write([1])
+        with self.assertRaises( TypeError ):
+            a_pin_group.write([1,2])
+        with self.assertRaises( TypeError ):
+            a_pin_group.write([1,2,3,4])
+        a_pin_group.close()
+
+    def test_write_iterable_right_number_of_elements_raises_nothing(self):
+        a_pin_group = pingroup.PinListWriter([23,4,7])
+        a_pin_group.write([False,0,[]])
+        a_pin_group.close()
+
 class XPinGroupIOSystemTests(unittest.TestCase):
     def tearDown(self):
         cleaned_up = []
@@ -288,7 +400,7 @@ class XPinGroupIOSystemTests(unittest.TestCase):
                                               ]\
                                             , 'w')
         ITERATIONS = 200
-        print "\nStarting pin group write timing..."
+        print "\nStarting pin group word write timing..."
         time.sleep(0.05)
         then = time.time()
         for it in range(ITERATIONS):
@@ -297,6 +409,63 @@ class XPinGroupIOSystemTests(unittest.TestCase):
         now = time.time()
         a_pin_group.write(0)
         print ITERATIONS, "* 0..15 GPIO pin group writes took:", now - then, "seconds."
+
+    def test_01100_write_F_F_F_to_T_T_T_and_down_again_to_gen_gpio0_to_2(self):
+        a_pin_group = pingroup.open_pingroup( [ pin.PinId.p1_gpio_gen0()\
+                                              , pin.PinId.p1_gpio_gen1()\
+                                              , pin.PinId.p1_gpio_gen2()\
+                                              ]\
+                                            , 'wS')
+        states =    [   [False, False, False]\
+                    ,   [ True, False, False]\
+                    ,   [False,  True, False]\
+                    ,   [ True,  True, False]\
+                    ,   [False, False,  True]\
+                    ,   [ True, False,  True]\
+                    ,   [False,  True,  True]\
+                    ,   [ True,  True,  True]\
+                    ]
+        for i in states:
+            time.sleep(0.5)
+            a_pin_group.write(i)
+        for i in reversed(states):
+            time.sleep(0.5)
+            a_pin_group.write(i)
+
+    def test_01150_time_writes_F_F_F_F_to_T_T_T_T_on_gen_gpio0_to_3(self):
+        a_pin_group = pingroup.open_pingroup( [ pin.PinId.p1_gpio_gen0()\
+                                              , pin.PinId.p1_gpio_gen1()\
+                                              , pin.PinId.p1_gpio_gen2()\
+                                              , pin.PinId.p1_gpio_gen3()\
+                                              ]\
+                                            , 'wS')
+        states =    [   [False, False, False, False]\
+                    ,   [ True, False, False, False]\
+                    ,   [False,  True, False, False]\
+                    ,   [ True,  True, False, False]\
+                    ,   [False, False,  True, False]\
+                    ,   [ True, False,  True, False]\
+                    ,   [False,  True,  True, False]\
+                    ,   [ True,  True,  True, False]\
+                    ,   [False, False, False,  True]\
+                    ,   [ True, False, False,  True]\
+                    ,   [False,  True, False,  True]\
+                    ,   [ True,  True, False,  True]\
+                    ,   [False, False,  True,  True]\
+                    ,   [ True, False,  True,  True]\
+                    ,   [False,  True,  True,  True]\
+                    ,   [ True,  True,  True,  True]\
+                    ]
+        ITERATIONS = 200
+        print "\nStarting pin group sequence write timing..."
+        time.sleep(0.05)
+        then = time.time()
+        for it in range(ITERATIONS):
+            for i in states:
+                a_pin_group.write(i)
+        now = time.time()
+        a_pin_group.write(states[0])
+        print ITERATIONS, "* F,F,F,F..T,T,T,T GPIO pin group writes took:", now - then, "seconds."
 
 if __name__ == '__main__':
     unittest.main()
