@@ -8,8 +8,11 @@ the containing nested packages dibase.rpi - in order to
 note them as Raspberry Pi specific and differentiate them
 from Raspberry Pi packages from other parties.
 
-The initial version includes one package within the
+The initial versions include one package within the
 dibase.rpi containing package: gpio.
+
+2012-08-15: Added pingroup module to handle multiple GPIO pins
+2012-07-25: Initial version handling only single GPIO pins
 
 GPIO services: dibase.rpi.gpio
 ==============================
@@ -21,7 +24,7 @@ system in the form of IO classes similar in style to the Python
 file type (or various file IO types in Python 3).
 
 Pin ids : module pinid
-------------------------
+-----------------------
 
 GPIO lines are identified by integer pin id values rather than
 path name strings. The *PinId* class in the *pinid* module
@@ -112,3 +115,85 @@ Note that failure to close a pin can prevent it being opened
 again by another process - which might happen on a bad exit
 from an application. In order to cleanup such bad in-use pins
 the function force_free_pin can be used.
+
+IO for groups of GPIO pins : module pingroup
+--------------------------------------------
+
+The main GPIO types and functions dealing with IO for groups
+of GPIO pins are defined in the *pingroup* module. Pin groups
+make writing to or reading from multiple pins convenient.
+
+The *open_pingroup* function is similar to the *open_pin*
+function of the *pin* module. It takes an iterable sequence of
+pin id values - either integers or a *pinid.PinId* instances, and
+a mode string which can be 0..3 characters long. The mode value
+applies to all pins in a pin group. The modes allowed are an
+extension of those defined for the *pin* module *opne_pin*
+function's *mode* parameter. In addition to 'r' and 'w' direction
+and 'N', 'R', 'F', 'B' blocking modes, the *open_pingroup* *mode*
+parameter also defines a data format mode, which for a fully
+specified mode string is given by the 3rd character:
+
+* 'I' indicates a data format of integer words
+
+* 'S' indicates a data format of sequences of Boolean values
+
+The default is a data format of 'I' - integer words.
+
+If the blocking mode is defaulted then the data format mode
+character may appear as the 2nd mode string character.
+
+If using an integer word data format then the values of the
+indiviual GPIO pins passed to write or returned from read are
+multiplexed into a single integer value where bit 0 (the least
+significant bit) of the word contains the value for the GPIO pin
+specified by the first (0th) item in the *open_pingroup* pin id
+sequence parameter, bit 1 the value for the pin with the id at
+element with index 1 in the pin id sequence and so on.
+
+If using an iterable sequence of Boolean values to represent the
+values of the individual GPIO pins passed to write or returned
+from read then the items in such sequences are taken to be
+in the same order in reation to GPIO pins as the pin ids sequence
+passed to *open_pingroup*.
+
+The object returned from *open_pingroup* will have operations
+pertinent to the requested open mode, so a pin opened for
+writing will have a write operation but no read
+operations. 
+
+A read pin opened for reading with no edge state transition
+events will have a non-blocking read operation but no write
+operation. 
+
+A read pin opened for reading with edge state transition
+events will have a blocking read operation but no write
+operation.
+
+Write will accept an integer if opened specifying an integer word
+data format or an iterable sequence if opened specifying a
+sequence data format.
+
+Read will return an integer if opened specifying an integer word
+data format or an iterable sequence (currently a list) if opened
+specifying a sequence data format.
+
+When reading in blocking mode read blocks until either a time out
+or *any* pin in the group generates an event. The returned value
+tracks changes due to notified events unless a polling read is
+performed (by specifying a 0 time out value), when all pins in
+the group are polled for their current value. An effect of this
+behaviour is that when only waiting for rising edge events or
+falling edge events the returned value does *not* directly
+reflect the current state of all pins in the group.
+
+Like single pin IO objects returned from *pin.open_pin* objects
+returned from *open_pingroup* can be queried to determine if they
+are readable, writeable, blocking or closed and for the
+descriptors used to access GPIO pins' sys file system *value*
+file. Objects returned from *open_pingroup* have similar close
+requirements and behaviour to objects returned from
+*pin.open_pin*.
+
+
+
