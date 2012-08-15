@@ -244,7 +244,6 @@ class PinWordReaderSystemTests(unittest.TestCase):
         self.assertIsInstance(a_pin_group.read(), (int,long))
         a_pin_group.close()
 
-
 class PinListReaderSystemTests(unittest.TestCase):
     def tearDown(self):
         cleaned_up = []
@@ -336,6 +335,229 @@ class PinListReaderSystemTests(unittest.TestCase):
     def test_read_returns_iterable_type(self):
         a_pin_group = pingroup.PinListReader([23,4,7])
         self.assertIsInstance(a_pin_group.read(), collections.Iterable)
+        a_pin_group.close()
+
+class PinWordBlockingReaderSystemTests(unittest.TestCase):
+    def tearDown(self):
+        cleaned_up = []
+        for v in pinid.RPiPinIdSet.valid_ids():
+            id = pin.force_free_pin(pin.PinId.gpio(v))
+            if (id!=None):
+                cleaned_up.append(id)
+        if ( cleaned_up != [] ):
+            print "\nCleaned up left over exports for pins", cleaned_up
+        self.assertEqual(cleaned_up,[])
+
+    def test_invalid_pin_ids_sequence_fail_pin_creation(self):
+        with self.assertRaises( error.PinGroupIdsInvalidError ):
+            a_pin_group = pingroup.PinWordBlockingReader(23,'B')
+        with self.assertRaises( error.PinGroupIdsInvalidError ):
+            a_pin_group = pingroup.PinWordBlockingReader(None,'B')
+        with self.assertRaises( error.PinGroupIdsInvalidError ):
+            a_pin_group = pingroup.PinWordBlockingReader(1.234,'B')
+        with self.assertRaises( error.PinGroupIdsInvalidError ):
+            a_pin_group = pingroup.PinWordBlockingReader(False,'B')
+        with self.assertRaises( error.PinGroupIdsInvalidError ):
+            a_pin_group = pingroup.PinWordBlockingReader([],'B')
+
+    def test_invalid_pin_ids_fail_pin_creation(self):
+        with self.assertRaises( error.PinIdInvalidError ):
+            a_pin_group = pingroup.PinWordBlockingReader([-1],'B')
+        with self.assertRaises( error.PinIdInvalidError ):
+            a_pin_group = pingroup.PinWordBlockingReader(["Nan"],'B')
+        with self.assertRaises( error.PinIdInvalidError ):
+            a_pin_group = pingroup.PinWordBlockingReader("Nan",'B') # strings are iterable sequences!
+        with self.assertRaises( error.PinIdInvalidError ):
+            a_pin_group = pingroup.PinWordBlockingReader([100000],'B')
+        with self.assertRaises( error.PinIdInvalidError ):
+            a_pin_group = pingroup.PinWordBlockingReader([None],'B')
+
+    def test_invalid_blocking_mode_fail_pin_creation(self):
+        with self.assertRaises( error.PinBlockModeInvalidError ):
+            a_pin_group = pingroup.PinWordBlockingReader([7],'N')
+        with self.assertRaises( error.PinBlockModeInvalidError ):
+            a_pin_group = pingroup.PinWordBlockingReader([7],'X')
+        with self.assertRaises( TypeError ):
+            a_pin_group = pingroup.PinWordBlockingReader([7],23)
+        with self.assertRaises( TypeError ):
+            a_pin_group = pingroup.PinWordBlockingReader([7],[5])
+        with self.assertRaises( TypeError ):
+            a_pin_group = pingroup.PinWordBlockingReader([7],None)
+
+    def test_already_used_pin_id_fails_pin_creation_and_closes_any_open_pins(self):
+        with self.assertRaises( error.PinInUseError ):
+            a_pin_group = pingroup.PinWordBlockingReader([4,23,23],'B')
+        # try to open pins 4 & 23 again - if they were not closed when
+        # above group create failed then PinInUseError will be thrown.
+        a_pin_group = pingroup.PinWordBlockingReader([23,4],'B')
+
+    def test_close_closes_all_opened_pins(self):
+        a_pin_group = pingroup.PinWordBlockingReader([23,4,7],'B')
+        a_pin_group.close()
+        a_pin_group = pingroup.PinWordBlockingReader([23,4,7],'B')
+
+    def test_closed_reports_pin_group_state(self):
+        a_pin_group = pingroup.PinWordBlockingReader([23,4,7],'B')
+        self.assertFalse(a_pin_group.closed())
+        a_pin_group.close()
+        self.assertTrue(a_pin_group.closed())
+
+    def test_multiple_close_calls_do_nothing_bad(self):
+        a_pin_group = pingroup.PinWordBlockingReader([23,4,7],'B')
+        a_pin_group.close()
+        a_pin_group.close()
+        a_pin_group.close()        
+        self.assertTrue(a_pin_group.closed())
+ 
+    def test_pin_group_closed_on_with_exit(self):
+        outside_pg = None
+        with pingroup.PinWordBlockingReader([23,4,7],'B') as pg:
+            outside_pg = pg
+            self.assertFalse(pg.closed())
+            self.assertFalse(outside_pg.closed())
+        self.assertTrue(outside_pg.closed())
+        pingroup.PinWordBlockingReader([23,4,7],'B')
+ 
+    def test_file_descriptors_returns_expected_number_and_type_of_descriptors(self):
+        a_pin_group = pingroup.PinWordBlockingReader([23,4,7],'B')
+        a_pin_group_fds = a_pin_group.file_descriptors()
+        self.assertEqual(len(a_pin_group_fds), 3)
+        for fd in a_pin_group_fds:
+            self.assertIsInstance(fd, int)
+
+    def test_file_descriptors_returns_empty_list_if_pin_group_closed(self):
+        a_pin_group = pingroup.PinWordBlockingReader([23,4,7],'B')
+        a_pin_group.close()
+        a_pin_group_fds = a_pin_group.file_descriptors()
+        self.assertFalse(a_pin_group_fds)
+
+    def test_read_closed_group_raises_ValueError(self):
+        a_pin_group = pingroup.PinWordBlockingReader([23,4,7],'B')
+        a_pin_group.close()
+        with self.assertRaises( ValueError ):
+            a_pin_group.read(0)
+
+    def test_polled_read_returns_integer_type(self):
+        a_pin_group = pingroup.PinWordBlockingReader([23,4,7],'B')
+        self.assertIsInstance(a_pin_group.read(0), (int,long))
+        a_pin_group.close()
+
+    def test_timeout_read_returns_None(self):
+        a_pin_group = pingroup.PinWordBlockingReader([23,4,7],'B')
+        a_pin_group.read(0) # reset initial signalled states
+        self.assertIsNone(a_pin_group.read(0.001))
+        a_pin_group.close()
+
+
+class PinListBlockingReaderSystemTests(unittest.TestCase):
+    def tearDown(self):
+        cleaned_up = []
+        for v in pinid.RPiPinIdSet.valid_ids():
+            id = pin.force_free_pin(pin.PinId.gpio(v))
+            if (id!=None):
+                cleaned_up.append(id)
+        if ( cleaned_up != [] ):
+            print "\nCleaned up left over exports for pins", cleaned_up
+        self.assertEqual(cleaned_up,[])
+
+    def test_invalid_pin_ids_sequence_fail_pin_creation(self):
+        with self.assertRaises( error.PinGroupIdsInvalidError ):
+            a_pin_group = pingroup.PinListBlockingReader(23,'B')
+        with self.assertRaises( error.PinGroupIdsInvalidError ):
+            a_pin_group = pingroup.PinListBlockingReader(None,'B')
+        with self.assertRaises( error.PinGroupIdsInvalidError ):
+            a_pin_group = pingroup.PinListBlockingReader(1.234,'B')
+        with self.assertRaises( error.PinGroupIdsInvalidError ):
+            a_pin_group = pingroup.PinListBlockingReader(False,'B')
+        with self.assertRaises( error.PinGroupIdsInvalidError ):
+            a_pin_group = pingroup.PinListBlockingReader([],'B')
+
+    def test_invalid_pin_ids_fail_pin_creation(self):
+        with self.assertRaises( error.PinIdInvalidError ):
+            a_pin_group = pingroup.PinListBlockingReader([-1],'B')
+        with self.assertRaises( error.PinIdInvalidError ):
+            a_pin_group = pingroup.PinListBlockingReader(["Nan"],'B')
+        with self.assertRaises( error.PinIdInvalidError ):
+            a_pin_group = pingroup.PinListBlockingReader("Nan",'B') # strings are iterable sequences!
+        with self.assertRaises( error.PinIdInvalidError ):
+            a_pin_group = pingroup.PinListBlockingReader([100000],'B')
+        with self.assertRaises( error.PinIdInvalidError ):
+            a_pin_group = pingroup.PinListBlockingReader([None],'B')
+
+    def test_invalid_blocking_mode_fail_pin_creation(self):
+        with self.assertRaises( error.PinBlockModeInvalidError ):
+            a_pin_group = pingroup.PinListBlockingReader([7],'N')
+        with self.assertRaises( error.PinBlockModeInvalidError ):
+            a_pin_group = pingroup.PinListBlockingReader([7],'X')
+        with self.assertRaises( TypeError ):
+            a_pin_group = pingroup.PinListBlockingReader([7],23)
+        with self.assertRaises( TypeError ):
+            a_pin_group = pingroup.PinListBlockingReader([7],[5])
+        with self.assertRaises( TypeError ):
+            a_pin_group = pingroup.PinListBlockingReader([7],None)
+
+    def test_already_used_pin_id_fails_pin_creation_and_closes_any_open_pins(self):
+        with self.assertRaises( error.PinInUseError ):
+            a_pin_group = pingroup.PinListBlockingReader([4,23,23],'B')
+        # try to open pins 4 & 23 again - if they were not closed when
+        # above group create failed then PinInUseError will be thrown.
+        a_pin_group = pingroup.PinListBlockingReader([23,4],'B')
+
+    def test_close_closes_all_opened_pins(self):
+        a_pin_group = pingroup.PinListBlockingReader([23,4,7],'B')
+        a_pin_group.close()
+        a_pin_group = pingroup.PinListBlockingReader([23,4,7],'B')
+
+    def test_closed_reports_pin_group_state(self):
+        a_pin_group = pingroup.PinListBlockingReader([23,4,7],'B')
+        self.assertFalse(a_pin_group.closed())
+        a_pin_group.close()
+        self.assertTrue(a_pin_group.closed())
+
+    def test_multiple_close_calls_do_nothing_bad(self):
+        a_pin_group = pingroup.PinListBlockingReader([23,4,7],'B')
+        a_pin_group.close()
+        a_pin_group.close()
+        a_pin_group.close()        
+        self.assertTrue(a_pin_group.closed())
+ 
+    def test_pin_group_closed_on_with_exit(self):
+        outside_pg = None
+        with pingroup.PinListBlockingReader([23,4,7],'B') as pg:
+            outside_pg = pg
+            self.assertFalse(pg.closed())
+            self.assertFalse(outside_pg.closed())
+        self.assertTrue(outside_pg.closed())
+        pingroup.PinListBlockingReader([23,4,7],'B')
+ 
+    def test_file_descriptors_returns_expected_number_and_type_of_descriptors(self):
+        a_pin_group = pingroup.PinListBlockingReader([23,4,7],'B')
+        a_pin_group_fds = a_pin_group.file_descriptors()
+        self.assertEqual(len(a_pin_group_fds), 3)
+        for fd in a_pin_group_fds:
+            self.assertIsInstance(fd, int)
+
+    def test_file_descriptors_returns_empty_list_if_pin_group_closed(self):
+        a_pin_group = pingroup.PinListBlockingReader([23,4,7],'B')
+        a_pin_group.close()
+        a_pin_group_fds = a_pin_group.file_descriptors()
+        self.assertFalse(a_pin_group_fds)
+
+    def test_read_closed_group_raises_ValueError(self):
+        a_pin_group = pingroup.PinListBlockingReader([23,4,7],'B')
+        a_pin_group.close()
+        with self.assertRaises( ValueError ):
+            a_pin_group.read(0)
+
+    def test_polled_read_returns_iterable_type(self):
+        a_pin_group = pingroup.PinListBlockingReader([23,4,7],'B')
+        self.assertIsInstance(a_pin_group.read(0), collections.Iterable)
+        a_pin_group.close()
+
+    def test_timeout_read_returns_None(self):
+        a_pin_group = pingroup.PinListBlockingReader([23,4,7],'B')
+        a_pin_group.read(0) # reset initial signalled states
+        self.assertIsNone(a_pin_group.read(0.001))
         a_pin_group.close()
 
 class PinWordWriterSystemTests(unittest.TestCase):
@@ -584,6 +806,7 @@ class XPinGroupIOSystemTests(unittest.TestCase):
                                               , pin.PinId.p1_gpio_gen2()\
                                               ]\
                                             , 'w')
+        self.assertIsInstance(a_pin_group,pingroup.PinWordWriter)
         for i in range(8):
             time.sleep(0.5)
             a_pin_group.write(i)
@@ -598,6 +821,7 @@ class XPinGroupIOSystemTests(unittest.TestCase):
                                               , pin.PinId.p1_gpio_gen3()\
                                               ]\
                                             , 'w')
+        self.assertIsInstance(a_pin_group,pingroup.PinWordWriter)
         ITERATIONS = 200
         print "\nStarting pin group word write timing..."
         time.sleep(0.05)
@@ -615,6 +839,7 @@ class XPinGroupIOSystemTests(unittest.TestCase):
                                               , pin.PinId.p1_gpio_gen2()\
                                               ]\
                                             , 'wS')
+        self.assertIsInstance(a_pin_group,pingroup.PinListWriter)
         states =    [   [False, False, False]\
                     ,   [ True, False, False]\
                     ,   [False,  True, False]\
@@ -638,6 +863,7 @@ class XPinGroupIOSystemTests(unittest.TestCase):
                                               , pin.PinId.p1_gpio_gen3()\
                                               ]\
                                             , 'wS')
+        self.assertIsInstance(a_pin_group,pingroup.PinListWriter)
         states =    [   [False, False, False, False]\
                     ,   [ True, False, False, False]\
                     ,   [False,  True, False, False]\
@@ -671,17 +897,18 @@ class XPinGroupIOSystemTests(unittest.TestCase):
                                               , pin.PinId.p1_gpio_gclk()\
                                               ]\
                                             , 'r')
+        self.assertIsInstance(a_pin_group,pingroup.PinWordReader)
         print "\nMake P1 pin GPIO_GEN6  LOW  and GPIO_GCLK  LOW..."
-        time.sleep(2)
+        time.sleep(1.5)
         self.assertEquals(a_pin_group.read(), 0)
         print "Make P1 pin GPIO_GEN6 HIGH  and GPIO_GCLK  LOW..."
-        time.sleep(2)
+        time.sleep(1.5)
         self.assertEquals(a_pin_group.read(), 1)
         print "Make P1 pin GPIO_GEN6  LOW  and GPIO_GCLK HIGH..."
-        time.sleep(2)
+        time.sleep(1.5)
         self.assertEquals(a_pin_group.read(), 2)
         print "Make P1 pin GPIO_GEN6 HIGH  and GPIO_GCLK HIGH..."
-        time.sleep(2)
+        time.sleep(1.5)
         self.assertEquals(a_pin_group.read(), 3)
 
     def test_03100_read_sequence_from_gpio_gen6_and_gpio_gclk(self):
@@ -689,18 +916,156 @@ class XPinGroupIOSystemTests(unittest.TestCase):
                                               , pin.PinId.p1_gpio_gclk()\
                                               ]\
                                             , 'rS')
+        self.assertIsInstance(a_pin_group,pingroup.PinListReader)
         print "\nMake P1 pin GPIO_GEN6  LOW  and GPIO_GCLK  LOW..."
-        time.sleep(2)
+        time.sleep(1.5)
         self.assertEquals(a_pin_group.read(), [False,False])
         print "Make P1 pin GPIO_GEN6 HIGH  and GPIO_GCLK  LOW..."
-        time.sleep(2)
+        time.sleep(1.5)
         self.assertEquals(a_pin_group.read(), [True,False])
         print "Make P1 pin GPIO_GEN6  LOW  and GPIO_GCLK HIGH..."
-        time.sleep(2)
+        time.sleep(1.5)
         self.assertEquals(a_pin_group.read(), [False,True])
         print "Make P1 pin GPIO_GEN6 HIGH  and GPIO_GCLK HIGH..."
-        time.sleep(2)
+        time.sleep(1.5)
         self.assertEquals(a_pin_group.read(), [True,True])
+
+    def test_04100_poll_blocking_read_word_from_gpio_gen6_and_gpio_gclk(self):
+        a_pin_group = pingroup.open_pingroup( [ pin.PinId.p1_gpio_gen6()\
+                                              , pin.PinId.p1_gpio_gclk()\
+                                              ]\
+                                            , 'rB')
+        self.assertIsInstance(a_pin_group,pingroup.PinWordBlockingReader)
+        print "\nMake P1 pin GPIO_GEN6  LOW  and GPIO_GCLK  LOW..."
+        time.sleep(1.5)
+        self.assertEquals(a_pin_group.read(0), 0)
+        print "Make P1 pin GPIO_GEN6 HIGH  and GPIO_GCLK  LOW..."
+        time.sleep(1.5)
+        self.assertEquals(a_pin_group.read(0), 1)
+        print "Make P1 pin GPIO_GEN6  LOW  and GPIO_GCLK HIGH..."
+        time.sleep(1.5)
+        self.assertEquals(a_pin_group.read(0), 2)
+        print "Make P1 pin GPIO_GEN6 HIGH  and GPIO_GCLK HIGH..."
+        time.sleep(1.5)
+        self.assertEquals(a_pin_group.read(0), 3)
+
+    def test_04150_blocking_both_read_word_from_gpio_gen6_and_gpio_gclk(self):
+        a_pin_group = pingroup.open_pingroup( [ pin.PinId.p1_gpio_gen6()\
+                                              , pin.PinId.p1_gpio_gclk()\
+                                              ]\
+                                            , 'rB')
+        self.assertIsInstance(a_pin_group,pingroup.PinWordBlockingReader)
+        print "\nMake P1 pin GPIO_GEN6  LOW  and GPIO_GCLK  LOW..."
+        time.sleep(1.5)
+        self.assertEquals(a_pin_group.read(), 0)
+        print "Change P1 pin GPIO_GEN6 to HIGH  keep   GPIO_GCLK at  LOW..."
+        self.assertEquals(a_pin_group.read(), 1)
+        print "Keep   P1 pin GPIO_GEN6 at HIGH  change GPIO_GCLK to HIGH..."
+        self.assertEquals(a_pin_group.read(), 3)
+        print "Change P1 pin GPIO_GEN6 to  LOW  keep   GPIO_GCLK at HIGH..."
+
+        self.assertEquals(a_pin_group.read(), 2)
+
+    def test_04200_blocking_rising_read_word_from_gpio_gen6_and_gpio_gclk(self):
+        a_pin_group = pingroup.open_pingroup( [ pin.PinId.p1_gpio_gen6()\
+                                              , pin.PinId.p1_gpio_gclk()\
+                                              ]\
+                                            , 'rR')
+        self.assertIsInstance(a_pin_group,pingroup.PinWordBlockingReader)
+        print "\nMake P1 pin GPIO_GEN6  LOW  and GPIO_GCLK  LOW..."
+        time.sleep(1.5)
+        self.assertEquals(a_pin_group.read(), 0)
+        print "Toggle P1 pin GPIO_GEN6 state keep   GPIO_GCLK   LOW..."
+        self.assertEquals(a_pin_group.read(), 1)
+        print "Keep   P1 pin GPIO_GEN6  LOW  toggle GPIO_GCLK state..."
+        self.assertEquals(a_pin_group.read(), 3)
+        time.sleep(1.0)
+        self.assertEquals(a_pin_group.read(0), 0)
  
+    def test_04250_blocking_rising_read_word_from_gpio_gen6_and_gpio_gclk(self):
+        a_pin_group = pingroup.open_pingroup( [ pin.PinId.p1_gpio_gen6()\
+                                              , pin.PinId.p1_gpio_gclk()\
+                                              ]\
+                                            , 'rF')
+        self.assertIsInstance(a_pin_group,pingroup.PinWordBlockingReader)
+        print "\nMake P1 pin GPIO_GEN6 HIGH  and GPIO_GCLK HIGH..."
+        time.sleep(2.5)
+        self.assertEquals(a_pin_group.read(), 3)
+        print "Toggle P1 pin GPIO_GEN6 state keep   GPIO_GCLK  HIGH..."
+        self.assertEquals(a_pin_group.read(), 2)
+        print "Keep   P1 pin GPIO_GEN6 HIGH  toggle GPIO_GCLK state..."
+        self.assertEquals(a_pin_group.read(), 0)
+        time.sleep(1.0)
+        self.assertEquals(a_pin_group.read(0), 3)
+        print "\nMake P1 pin GPIO_GEN6  LOW  and GPIO_GCLK  LOW..."
+
+    def test_05100_poll_blocking_read_list_from_gpio_gen6_and_gpio_gclk(self):
+        a_pin_group = pingroup.open_pingroup( [ pin.PinId.p1_gpio_gen6()\
+                                              , pin.PinId.p1_gpio_gclk()\
+                                              ]\
+                                            , 'rBS')
+        self.assertIsInstance(a_pin_group,pingroup.PinListBlockingReader)
+        print "\nMake P1 pin GPIO_GEN6  LOW  and GPIO_GCLK  LOW..."
+        time.sleep(1.5)
+        self.assertEquals(a_pin_group.read(0), [False,False])
+        print "Make P1 pin GPIO_GEN6 HIGH  and GPIO_GCLK  LOW..."
+        time.sleep(1.5)
+        self.assertEquals(a_pin_group.read(0), [True,False])
+        print "Make P1 pin GPIO_GEN6  LOW  and GPIO_GCLK HIGH..."
+        time.sleep(1.5)
+        self.assertEquals(a_pin_group.read(0), [False,True])
+        print "Make P1 pin GPIO_GEN6 HIGH  and GPIO_GCLK HIGH..."
+        time.sleep(1.5)
+        self.assertEquals(a_pin_group.read(0), [True,True])
+
+    def test_05150_blocking_both_read_word_list_gpio_gen6_and_gpio_gclk(self):
+        a_pin_group = pingroup.open_pingroup( [ pin.PinId.p1_gpio_gen6()\
+                                              , pin.PinId.p1_gpio_gclk()\
+                                              ]\
+                                            , 'rBS')
+        self.assertIsInstance(a_pin_group,pingroup.PinListBlockingReader)
+        print "\nMake P1 pin GPIO_GEN6  LOW  and GPIO_GCLK  LOW..."
+        time.sleep(1.5)
+        self.assertEquals(a_pin_group.read(), [False,False])
+        print "Change P1 pin GPIO_GEN6 to HIGH  keep   GPIO_GCLK at  LOW..."
+        self.assertEquals(a_pin_group.read(), [True,False])
+        print "Keep   P1 pin GPIO_GEN6 at HIGH  change GPIO_GCLK to HIGH..."
+        self.assertEquals(a_pin_group.read(), [True,True])
+        print "Change P1 pin GPIO_GEN6 to  LOW  keep   GPIO_GCLK at HIGH..."
+        self.assertEquals(a_pin_group.read(), [False,True])
+
+    def test_05200_blocking_rising_read_list_from_gpio_gen6_and_gpio_gclk(self):
+        a_pin_group = pingroup.open_pingroup( [ pin.PinId.p1_gpio_gen6()\
+                                              , pin.PinId.p1_gpio_gclk()\
+                                              ]\
+                                            , 'rRS')
+        self.assertIsInstance(a_pin_group,pingroup.PinListBlockingReader)
+        print "\nMake P1 pin GPIO_GEN6  LOW  and GPIO_GCLK  LOW..."
+        time.sleep(1.5)
+        self.assertEquals(a_pin_group.read(), [False,False])
+        print "Toggle P1 pin GPIO_GEN6 state keep   GPIO_GCLK   LOW..."
+        self.assertEquals(a_pin_group.read(), [True,False])
+        print "Keep   P1 pin GPIO_GEN6  LOW  toggle GPIO_GCLK state..."
+        self.assertEquals(a_pin_group.read(), [True,True])
+        time.sleep(1.0)
+        self.assertEquals(a_pin_group.read(0), [False,False])
+
+    def test_05250_blocking_rising_read_list_from_gpio_gen6_and_gpio_gclk(self):
+        a_pin_group = pingroup.open_pingroup( [ pin.PinId.p1_gpio_gen6()\
+                                              , pin.PinId.p1_gpio_gclk()\
+                                              ]\
+                                            , 'rFS')
+        self.assertIsInstance(a_pin_group,pingroup.PinListBlockingReader)
+        print "\nMake P1 pin GPIO_GEN6 HIGH  and GPIO_GCLK HIGH..."
+        time.sleep(2.5)
+        self.assertEquals(a_pin_group.read(), [True,True])
+        print "Toggle P1 pin GPIO_GEN6 state keep   GPIO_GCLK  HIGH..."
+        self.assertEquals(a_pin_group.read(), [False,True])
+        print "Keep   P1 pin GPIO_GEN6 HIGH  toggle GPIO_GCLK state..."
+        self.assertEquals(a_pin_group.read(), [False,False])
+        time.sleep(1.0)
+        self.assertEquals(a_pin_group.read(0), [True,True])
+        print "\nMake P1 pin GPIO_GEN6  LOW  and GPIO_GCLK  LOW..."
+
 if __name__ == '__main__':
     unittest.main()

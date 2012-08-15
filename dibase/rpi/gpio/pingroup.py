@@ -122,7 +122,7 @@ class _PinGroupIOBase(object):
 
     def __del__(self):
         '''Calls close to try to ensure pin group is cleanly freed up'''
-        if self._pins:
+        if hasattr(self, '_pins') and self._pins:
             self.close()
 
     def __enter__(self):
@@ -226,7 +226,7 @@ class PinListWriter(_PinGroupIOBase, GPIOWriterBase):
     def __init__(self, pin_ids):
         '''
             Creates a group of GPIO pins for writing (output) with pin bit
-            values expressed to write as Boolean values in an interable
+            values expressed to write as Boolean values in an iterable
             sequence ordered as per the pin id sequence passed as pin_ids.
 
             pin_ids should be an iterable sequence of pin id values of the
@@ -323,7 +323,7 @@ class PinListReader(_PinGroupIOBase, GPIOReaderBase):
     def __init__(self, pin_ids):
         '''
             Creates a group of GPIO pins for reading (input) with read pin
-            bit values expressed as Boolean values in an interable
+            bit values expressed as Boolean values in an iterable
             sequence ordered as per the pin id sequence passed as pin_ids.
 
             pin_ids should be an iterable sequence of pin id values of the
@@ -354,13 +354,171 @@ class PinListReader(_PinGroupIOBase, GPIOReaderBase):
             value.append(self._pins[bit_number].read())
         return value
 
-class PinWordBlockingReader(object):#(_PinGroupIOBase, GPIOBlockingReaderBase):
+class PinWordBlockingReader(_PinGroupIOBase, GPIOBlockingReaderBase):
+    '''
+        Concrete GPIOBlockingReaderBase implementation for groups of GPIO
+        pins. It handles reading 0 or 1 values from the related GPIO pins
+        presented as bits in an integer. Each GPIO pin in the group will
+        have been exported and set up for input as part of initialisation.
+    '''
     def __init__(self, pin_ids, blocking_mode):
-        pass
+        '''
+            Creates a group of GPIO pins for blocking read (input) with read
+            pin bit values expressed as bits in an integer with bit 0
+            indicating the value for the first pin in the group, and bit 1
+            the next and so on. Pins are ordered arounding to the position of
+            their id in the pin_ids argument.
 
-class PinListBlockingReader(object):#(_PinGroupIOBase, GPIOBlockingReaderBase):
+            pin_ids should be an iterable sequence of pin id values of the
+            pins to be in group. It should contain at least one value
+            otherwise a gpioerror.PinGroupIdsInvalidError exception is
+            raised. Additionally any exception that might be raised by
+            pin.open_pin may be raised other than those relating to bad mode
+            values.
+            
+            blocking_mode should be one of the blocking mode characters that
+            relate to blocking on input pin edge events - 'R', 'F' or 'B'.
+            Other strings will raise a gpioerror.PinBlockModeInvalidError
+            while values of other types will rasie a TypeError.
+            
+            On successful return an open pin group object will be open and
+            ready to read from. Otherwise it will be closed.
+        '''
+        if blocking_mode==BlockMode.non_blocking_open_mode():
+            raise PinBlockModeInvalidError
+        super(PinWordBlockingReader, self).__init__(pin_ids,'r'+blocking_mode)
+        self._cached_value = 0 #can be any int between 0 & 2**len(self._pins)-1
+        self._fd_to_bit_value = {}
+        fds = self.file_descriptors()
+        for i in range(len(fds)):
+            self._fd_to_bit_value[fds[i]] = 2**i
+
+    def read(self, timeout=None):
+        '''
+            Returns when an edge event occurs on any of the input pins in
+            the group or time out expires, unless the timeout argument is
+            0. Implies pin opened in an edge event blocking mode.
+            
+            Timeout values are floating point values in seconds. If timeout
+            is not given or None then call will not timeout and will return
+            normally only when an edge event occurs. A 0 timeout will return
+            immediately with the polled value of the current state of each
+            pin in the group, read sequentially in order of pin ids passed
+            to __init__.
+
+            Returns an integer whose bits represent the notified read state of
+            all bits in the pin group since the _last_ polling read (timeout
+            of 0) with bit 0 representing the pin specified by the 0th element
+            of pin_ids argument passed to __init__ and so on. This means that
+            reads notified of only rising or falling edges will return values
+            that have bits refelcting only changes to 1 (rising edge events)
+            or 0 (falling edge events) since the last polling read and thus
+            do _not_ directly track the value of pins in the group.
+
+            None is returned if the call timed out.
+
+            Throws a ValueError if the instance is not open (that is
+            self.closed() returns True).
+        '''
+        if self.closed():
+            raise ValueError
+
+        if timeout != 0:
+            changed = select.select( [], [], self._pins, timeout )
+            if changed == ([], [], []): # Triple of empty lists=>timed-out
+                return None
+        else: # polling, so have to read from all pins in group
+            changed = ([], [], self._pins)
+
+        for pin in changed[2]: # we only supplied fds in third list, index 2
+            pin._value_file().seek(0)
+            if pin._value_file().read()[0]=='1':
+                self._cached_value |= self._fd_to_bit_value[pin.fileno()]
+            else:
+                self._cached_value &= ~(self._fd_to_bit_value[pin.fileno()])
+        return self._cached_value
+
+class PinListBlockingReader(_PinGroupIOBase, GPIOBlockingReaderBase):
+    '''
+        Concrete GPIOBlockingReaderBase implementation for groups of GPIO
+        pins. It handles reading 0 or 1 values from the related GPIO pins
+        presented as Boolean value elements in an iterable sequence. Each
+        GPIO pin in the group will have been exported and set up for input
+        as part of initialisation.
+    '''
     def __init__(self, pin_ids, blocking_mode):
-        pass
+        '''
+            Creates a group of GPIO pins for blocking read (input) with read
+            pin bit values expressed as Boolean values in an iterable
+            sequence ordered as per the pin id sequence passed as pin_ids.
+
+            pin_ids should be an iterable sequence of pin id values of the
+            pins to be in group. It should contain at least one value
+            otherwise a gpioerror.PinGroupIdsInvalidError exception is
+            raised. Additionally any exception that might be raised by
+            pin.open_pin may be raised other than those relating to bad mode
+            values.
+            
+            blocking_mode should be one of the blocking mode characters that
+            relate to blocking on input pin edge events - 'R', 'F' or 'B'.
+            Other strings will raise a gpioerror.PinBlockModeInvalidError
+            while values of other types will rasie a TypeError.
+            
+            On successful return an open pin group object will be open and
+            ready to read from. Otherwise it will be closed.
+        '''
+        if blocking_mode==BlockMode.non_blocking_open_mode():
+            raise PinBlockModeInvalidError
+        super(PinListBlockingReader, self).__init__(pin_ids,'r'+blocking_mode)
+        self._cached_value = []
+        self._fd_to_pin_index = {}
+        fds = self.file_descriptors()
+        for i in range(len(fds)):
+            self._cached_value.append(False)
+            self._fd_to_pin_index[fds[i]] = i
+
+    def read(self, timeout=None):
+        '''
+            Returns when an edge event occurs on any of the input pins in
+            the group or time out expires, unless the timeout argument is
+            0. Implies pin opened in an edge event blocking mode.
+            
+            Timeout values are floating point values in seconds. If timeout
+            is not given or None then call will not timeout and will return
+            normally only when an edge event occurs. A 0 timeout will return
+            immediately with the polled value of the current state of each
+            pin in the group, read sequentially in order of pin ids passed
+            to __init__.
+
+            Returns a list of Boolean values whose elements represent the
+            notified read state of all bits in the pin group since the 
+            _last_ polling read (timeout of 0) with the 0th element
+            representing the pin specified by the 0th element of pin_ids
+            argument passed to __init__ and so on.  This means that reads
+            notified of only rising or falling edges will return values that
+            have bits refelcting only changes to 1 (rising edge events) or 0
+            (falling edge events) since the last polling read and thus do
+            _not_ directly track the value of pins in the group.
+
+            None is returned if the call timed out.
+
+            Throws a ValueError if the instance is not open (that is
+            self.closed() returns True).
+        '''
+        if self.closed():
+            raise ValueError
+
+        if timeout != 0:
+            changed = select.select( [], [], self._pins, timeout )
+            if changed == ([], [], []): # Triple of empty lists=>timed-out
+                return None
+        else: # polling, so have to read from all pins in group
+            changed = ([], [], self._pins)
+
+        for pin in changed[2]: # we only supplied fds in third list, index 2
+            pin._value_file().seek(0)
+            self._cached_value[self._fd_to_pin_index[pin.fileno()]] = pin._value_file().read()[0]=='1'
+        return self._cached_value
 
 def open_pingroup(pin_ids, mode='rNI'):
     '''
