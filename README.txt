@@ -102,7 +102,7 @@ events will have a blocking read operation but no write
 operation.
 
 All such objects can be queried to determine if they are
-readable, writeable, blocking or closed and for the underlying
+readable, writable, blocking or closed and for the underlying
 OS file descriptor number representing the file descriptor used
 to access the GPIO pin's sys file system *value* file. Unlike
 some other Raspberry Pi Python GPIO packages pin IO objects
@@ -128,7 +128,7 @@ function of the *pin* module. It takes an iterable sequence of
 pin id values - either integers or a *pinid.PinId* instances, and
 a mode string which can be 0..3 characters long. The mode value
 applies to all pins in a pin group. The modes allowed are an
-extension of those defined for the *pin* module *opne_pin*
+extension of those defined for the *pin* module *open_pin*
 function's *mode* parameter. In addition to 'r' and 'w' direction
 and 'N', 'R', 'F', 'B' blocking modes, the *open_pingroup* *mode*
 parameter also defines a data format mode, which for a fully
@@ -144,7 +144,7 @@ If the blocking mode is defaulted then the data format mode
 character may appear as the 2nd mode string character.
 
 If using an integer word data format then the values of the
-indiviual GPIO pins passed to write or returned from read are
+individual GPIO pins passed to write or returned from read are
 multiplexed into a single integer value where bit 0 (the least
 significant bit) of the word contains the value for the GPIO pin
 specified by the first (0th) item in the *open_pingroup* pin id
@@ -154,7 +154,7 @@ element with index 1 in the pin id sequence and so on.
 If using an iterable sequence of Boolean values to represent the
 values of the individual GPIO pins passed to write or returned
 from read then the items in such sequences are taken to be
-in the same order in reation to GPIO pins as the pin ids sequence
+in the same order in relation to GPIO pins as the pin ids sequence
 passed to *open_pingroup*.
 
 The object returned from *open_pingroup* will have operations
@@ -189,7 +189,7 @@ reflect the current state of all pins in the group.
 
 Like single pin IO objects returned from *pin.open_pin* objects
 returned from *open_pingroup* can be queried to determine if they
-are readable, writeable, blocking or closed and for the
+are readable, writable, blocking or closed and for the
 descriptors used to access GPIO pins' sys file system *value*
 file. Objects returned from *open_pingroup* have similar close
 requirements and behaviour to objects returned from
