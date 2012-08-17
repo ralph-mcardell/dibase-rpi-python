@@ -21,15 +21,15 @@ import sys
 if __name__ == '__main__':
     sys.path.insert(0, './../..')
 from gpio import pingroup
-from gpio import pin
-from gpio import pinid
+from gpio.pin import force_free_pin
+from gpio.pinid import RPiPinIdSet
 from gpio import gpioerror as error
 
 class OpenPinGroupFunctionSystemTests(unittest.TestCase):
     def tearDown(self):
         cleaned_up = []
-        for v in pinid.RPiPinIdSet.valid_ids():
-            id = pin.force_free_pin(pin.PinId.gpio(v))
+        for v in RPiPinIdSet.valid_ids():
+            id = force_free_pin(pingroup.PinId.gpio(v))
             if (id!=None):
                 cleaned_up.append(id)
         if ( cleaned_up != [] ):
@@ -38,124 +38,124 @@ class OpenPinGroupFunctionSystemTests(unittest.TestCase):
 
     def test_open_pins_for_writing_bad_blocking_mode_fails(self):
         with self.assertRaises( error.PinBlockModeInvalidError ):
-            pingroup.open_pingroup([pin.PinId.p1_gpio_gen0()],'w#I')
+            pingroup.open_pingroup([pingroup.PinId.p1_gpio_gen0()],'w#I')
 
     def test_open_pins_for_writing_bad_format_mode_fails(self):
         with self.assertRaises( error.PinGroupFormatModeInvalidError ):
-            pingroup.open_pingroup([pin.PinId.p1_gpio_gen0()],'wN#')
+            pingroup.open_pingroup([pingroup.PinId.p1_gpio_gen0()],'wN#')
 
     def test_open_pins_for_writing_bad_blocking_or_format_mode_fails(self):
         with self.assertRaises( error.PinGroupOpenModeInvalidError ):
-            pingroup.open_pingroup([pin.PinId.p1_gpio_gen0()],'w#')
+            pingroup.open_pingroup([pingroup.PinId.p1_gpio_gen0()],'w#')
 
     def test_open_pin_for_writing_creates_PinWordWriter(self):
-        self.assertIsInstance(pingroup.open_pingroup([pin.PinId.p1_gpio_gen0()],'w'),pingroup.PinWordWriter)
+        self.assertIsInstance(pingroup.open_pingroup([pingroup.PinId.p1_gpio_gen0()],'w'),pingroup.PinWordWriter)
 
     def test_open_pin_for_writing_nonblocking_mode_creates_PinWordWriter(self):
-        self.assertIsInstance(pingroup.open_pingroup([pin.PinId.p1_gpio_gen0()],'wN'),pingroup.PinWordWriter)
+        self.assertIsInstance(pingroup.open_pingroup([pingroup.PinId.p1_gpio_gen0()],'wN'),pingroup.PinWordWriter)
 
     def test_open_pin_for_writing_integer_mode_creates_PinWordWriter(self):
-        self.assertIsInstance(pingroup.open_pingroup([pin.PinId.p1_gpio_gen0()],'wI'),pingroup.PinWordWriter)
+        self.assertIsInstance(pingroup.open_pingroup([pingroup.PinId.p1_gpio_gen0()],'wI'),pingroup.PinWordWriter)
 
     def test_open_pin_for_writing_noblocking_integer_mode_creates_PinWordWriter(self):
-        self.assertIsInstance(pingroup.open_pingroup([pin.PinId.p1_gpio_gen0()],'wNI'),pingroup.PinWordWriter)
+        self.assertIsInstance(pingroup.open_pingroup([pingroup.PinId.p1_gpio_gen0()],'wNI'),pingroup.PinWordWriter)
 
     def test_open_pin_for_writing_sequence_mode_creates_PinListWriter(self):
-        self.assertIsInstance(pingroup.open_pingroup([pin.PinId.p1_gpio_gen0()],'wS'),pingroup.PinListWriter)
+        self.assertIsInstance(pingroup.open_pingroup([pingroup.PinId.p1_gpio_gen0()],'wS'),pingroup.PinListWriter)
 
     def test_open_pin_for_writing_nonblocking_sequence_mode_creates_PinListWriter(self):
-        self.assertIsInstance(pingroup.open_pingroup([pin.PinId.p1_gpio_gen0()],'wNS'),pingroup.PinListWriter)
+        self.assertIsInstance(pingroup.open_pingroup([pingroup.PinId.p1_gpio_gen0()],'wNS'),pingroup.PinListWriter)
 
     def test_open_pins_for_writing_some_blocking_mode_fails(self):
         with self.assertRaises( error.PinBlockModeInvalidError ):
-            pingroup.open_pingroup([pin.PinId.p1_gpio_gen0()],'wRI')
+            pingroup.open_pingroup([pingroup.PinId.p1_gpio_gen0()],'wRI')
         with self.assertRaises( error.PinBlockModeInvalidError ):
-            pingroup.open_pingroup([pin.PinId.p1_gpio_gen0()],'wFS')
+            pingroup.open_pingroup([pingroup.PinId.p1_gpio_gen0()],'wFS')
         with self.assertRaises( error.PinBlockModeInvalidError ):
-            pingroup.open_pingroup([pin.PinId.p1_gpio_gen0()],'wBI')
+            pingroup.open_pingroup([pingroup.PinId.p1_gpio_gen0()],'wBI')
         with self.assertRaises( error.PinBlockModeInvalidError ):
-            pingroup.open_pingroup([pin.PinId.p1_gpio_gen0()],'wR')
+            pingroup.open_pingroup([pingroup.PinId.p1_gpio_gen0()],'wR')
         with self.assertRaises( error.PinBlockModeInvalidError ):
-            pingroup.open_pingroup([pin.PinId.p1_gpio_gen0()],'wF')
+            pingroup.open_pingroup([pingroup.PinId.p1_gpio_gen0()],'wF')
         with self.assertRaises( error.PinBlockModeInvalidError ):
-            pingroup.open_pingroup([pin.PinId.p1_gpio_gen0()],'wB')
+            pingroup.open_pingroup([pingroup.PinId.p1_gpio_gen0()],'wB')
 
     def test_open_pins_for_reading_bad_blocking_mode_fails(self):
         with self.assertRaises( error.PinBlockModeInvalidError ):
-            pingroup.open_pingroup([pin.PinId.p1_gpio_gen0()],'rXS')
+            pingroup.open_pingroup([pingroup.PinId.p1_gpio_gen0()],'rXS')
 
     def test_open_pins_for_reading_bad_format_mode_fails(self):
         with self.assertRaises( error.PinGroupFormatModeInvalidError ):
-            pingroup.open_pingroup([pin.PinId.p1_gpio_gen0()],'rBX')
+            pingroup.open_pingroup([pingroup.PinId.p1_gpio_gen0()],'rBX')
 
     def test_open_pins_for_reading_bad_blocking_or_format_mode_fails(self):
         with self.assertRaises( error.PinGroupOpenModeInvalidError ):
-            pingroup.open_pingroup([pin.PinId.p1_gpio_gen0()],'r#')
+            pingroup.open_pingroup([pingroup.PinId.p1_gpio_gen0()],'r#')
 
     def test_open_pins_bad_rw_mode_fails(self):
         with self.assertRaises( error.PinDirectionModeInvalidError ):
-            pingroup.open_pingroup([pin.PinId.p1_gpio_gen0()],'a')
+            pingroup.open_pingroup([pingroup.PinId.p1_gpio_gen0()],'a')
 
     def test_open_pins_bad_mode_string_fails(self):
         with self.assertRaises( error.PinGroupOpenModeInvalidError ):
-            pingroup.open_pingroup([pin.PinId.p1_gpio_gen0()],'rNS+')
+            pingroup.open_pingroup([pingroup.PinId.p1_gpio_gen0()],'rNS+')
 
     def test_open_pin_for_reading_creates_PinWordReader(self):
-        self.assertIsInstance(pingroup.open_pingroup([pin.PinId.p1_gpio_gen0()],'r'),pingroup.PinWordReader)
+        self.assertIsInstance(pingroup.open_pingroup([pingroup.PinId.p1_gpio_gen0()],'r'),pingroup.PinWordReader)
 
     def test_open_pin_for_reading_nonblocking_mode_creates_creates_PinWordReader(self):
-        self.assertIsInstance(pingroup.open_pingroup([pin.PinId.p1_gpio_gen0()],'rN'),pingroup.PinWordReader)
+        self.assertIsInstance(pingroup.open_pingroup([pingroup.PinId.p1_gpio_gen0()],'rN'),pingroup.PinWordReader)
 
     def test_open_pin_for_reading_integer_mode_creates_creates_PinWordReader(self):
-        self.assertIsInstance(pingroup.open_pingroup([pin.PinId.p1_gpio_gen0()],'rI'),pingroup.PinWordReader)
+        self.assertIsInstance(pingroup.open_pingroup([pingroup.PinId.p1_gpio_gen0()],'rI'),pingroup.PinWordReader)
 
     def test_open_pin_for_reading_nonblocking_integer_mode_creates_creates_PinWordReader(self):
-        self.assertIsInstance(pingroup.open_pingroup([pin.PinId.p1_gpio_gen0()],'rNI'),pingroup.PinWordReader)
+        self.assertIsInstance(pingroup.open_pingroup([pingroup.PinId.p1_gpio_gen0()],'rNI'),pingroup.PinWordReader)
 
     def test_open_pin_default_mode_creates_PinWordReader(self):
-        self.assertIsInstance(pingroup.open_pingroup([pin.PinId.p1_gpio_gen0()]),pingroup.PinWordReader)
+        self.assertIsInstance(pingroup.open_pingroup([pingroup.PinId.p1_gpio_gen0()]),pingroup.PinWordReader)
 
     def test_open_pin_empty_mode_creates_PinWordReader(self):
-        self.assertIsInstance(pingroup.open_pingroup([pin.PinId.p1_gpio_gen0()],''),pingroup.PinWordReader)
+        self.assertIsInstance(pingroup.open_pingroup([pingroup.PinId.p1_gpio_gen0()],''),pingroup.PinWordReader)
 
     def test_open_pin_for_reading_sequence_mode_creates_creates_PinListReader(self):
-        self.assertIsInstance(pingroup.open_pingroup([pin.PinId.p1_gpio_gen0()],'rS'),pingroup.PinListReader)
+        self.assertIsInstance(pingroup.open_pingroup([pingroup.PinId.p1_gpio_gen0()],'rS'),pingroup.PinListReader)
 
     def test_open_pin_for_reading_nonblocking_sequence_mode_creates_creates_PinListReader(self):
-        self.assertIsInstance(pingroup.open_pingroup([pin.PinId.p1_gpio_gen0()],'rNS'),pingroup.PinListReader)
+        self.assertIsInstance(pingroup.open_pingroup([pingroup.PinId.p1_gpio_gen0()],'rNS'),pingroup.PinListReader)
 
     def test_open_pin_for_reading_blockonfallingedge_creates_PinWordBlockingReader(self):
-        self.assertIsInstance(pingroup.open_pingroup([pin.PinId.p1_gpio_gen0()],'rF'),pingroup.PinWordBlockingReader)
+        self.assertIsInstance(pingroup.open_pingroup([pingroup.PinId.p1_gpio_gen0()],'rF'),pingroup.PinWordBlockingReader)
 
     def test_open_pin_for_reading_blockonrisingedge_creates_PinWordBlockingReader(self):
-        self.assertIsInstance(pingroup.open_pingroup([pin.PinId.p1_gpio_gen0()],'rR'),pingroup.PinWordBlockingReader)
+        self.assertIsInstance(pingroup.open_pingroup([pingroup.PinId.p1_gpio_gen0()],'rR'),pingroup.PinWordBlockingReader)
 
     def test_open_pin_for_reading_blockonbothedges_creates_PinWordBlockingReader(self):
-        self.assertIsInstance(pingroup.open_pingroup([pin.PinId.p1_gpio_gen0()],'rB'),pingroup.PinWordBlockingReader)
+        self.assertIsInstance(pingroup.open_pingroup([pingroup.PinId.p1_gpio_gen0()],'rB'),pingroup.PinWordBlockingReader)
 
     def test_open_pin_for_reading_blockonfallingedge_integer_mode_creates_PinWordBlockingReader(self):
-        self.assertIsInstance(pingroup.open_pingroup([pin.PinId.p1_gpio_gen0()],'rFI'),pingroup.PinWordBlockingReader)
+        self.assertIsInstance(pingroup.open_pingroup([pingroup.PinId.p1_gpio_gen0()],'rFI'),pingroup.PinWordBlockingReader)
 
     def test_open_pin_for_reading_blockonrisingedge_integer_mode_creates_PinWordBlockingReader(self):
-        self.assertIsInstance(pingroup.open_pingroup([pin.PinId.p1_gpio_gen0()],'rRI'),pingroup.PinWordBlockingReader)
+        self.assertIsInstance(pingroup.open_pingroup([pingroup.PinId.p1_gpio_gen0()],'rRI'),pingroup.PinWordBlockingReader)
 
     def test_open_pin_for_reading_blockonbothedges_integer_mode_creates_PinWordBlockingReader(self):
-        self.assertIsInstance(pingroup.open_pingroup([pin.PinId.p1_gpio_gen0()],'rBI'),pingroup.PinWordBlockingReader)
+        self.assertIsInstance(pingroup.open_pingroup([pingroup.PinId.p1_gpio_gen0()],'rBI'),pingroup.PinWordBlockingReader)
 
     def test_open_pin_for_reading_blockonfallingedge_sequence_mode_creates_PinListBlockingReader(self):
-        self.assertIsInstance(pingroup.open_pingroup([pin.PinId.p1_gpio_gen0()],'rFS'),pingroup.PinListBlockingReader)
+        self.assertIsInstance(pingroup.open_pingroup([pingroup.PinId.p1_gpio_gen0()],'rFS'),pingroup.PinListBlockingReader)
 
     def test_open_pin_for_reading_blockonrisingedge_sequence_mode_creates_PinListBlockingReader(self):
-        self.assertIsInstance(pingroup.open_pingroup([pin.PinId.p1_gpio_gen0()],'rRS'),pingroup.PinListBlockingReader)
+        self.assertIsInstance(pingroup.open_pingroup([pingroup.PinId.p1_gpio_gen0()],'rRS'),pingroup.PinListBlockingReader)
 
     def test_open_pin_for_reading_blockonbothedges_sequence_mode_creates_PinListBlockingReader(self):
-        self.assertIsInstance(pingroup.open_pingroup([pin.PinId.p1_gpio_gen0()],'rBS'),pingroup.PinListBlockingReader)
+        self.assertIsInstance(pingroup.open_pingroup([pingroup.PinId.p1_gpio_gen0()],'rBS'),pingroup.PinListBlockingReader)
 
 class PinWordReaderSystemTests(unittest.TestCase):
     def tearDown(self):
         cleaned_up = []
-        for v in pinid.RPiPinIdSet.valid_ids():
-            id = pin.force_free_pin(pin.PinId.gpio(v))
+        for v in RPiPinIdSet.valid_ids():
+            id = force_free_pin(pingroup.PinId.gpio(v))
             if (id!=None):
                 cleaned_up.append(id)
         if ( cleaned_up != [] ):
@@ -247,8 +247,8 @@ class PinWordReaderSystemTests(unittest.TestCase):
 class PinListReaderSystemTests(unittest.TestCase):
     def tearDown(self):
         cleaned_up = []
-        for v in pinid.RPiPinIdSet.valid_ids():
-            id = pin.force_free_pin(pin.PinId.gpio(v))
+        for v in RPiPinIdSet.valid_ids():
+            id = force_free_pin(pingroup.PinId.gpio(v))
             if (id!=None):
                 cleaned_up.append(id)
         if ( cleaned_up != [] ):
@@ -340,8 +340,8 @@ class PinListReaderSystemTests(unittest.TestCase):
 class PinWordBlockingReaderSystemTests(unittest.TestCase):
     def tearDown(self):
         cleaned_up = []
-        for v in pinid.RPiPinIdSet.valid_ids():
-            id = pin.force_free_pin(pin.PinId.gpio(v))
+        for v in RPiPinIdSet.valid_ids():
+            id = force_free_pin(pingroup.PinId.gpio(v))
             if (id!=None):
                 cleaned_up.append(id)
         if ( cleaned_up != [] ):
@@ -452,8 +452,8 @@ class PinWordBlockingReaderSystemTests(unittest.TestCase):
 class PinListBlockingReaderSystemTests(unittest.TestCase):
     def tearDown(self):
         cleaned_up = []
-        for v in pinid.RPiPinIdSet.valid_ids():
-            id = pin.force_free_pin(pin.PinId.gpio(v))
+        for v in RPiPinIdSet.valid_ids():
+            id = force_free_pin(pingroup.PinId.gpio(v))
             if (id!=None):
                 cleaned_up.append(id)
         if ( cleaned_up != [] ):
@@ -563,8 +563,8 @@ class PinListBlockingReaderSystemTests(unittest.TestCase):
 class PinWordWriterSystemTests(unittest.TestCase):
     def tearDown(self):
         cleaned_up = []
-        for v in pinid.RPiPinIdSet.valid_ids():
-            id = pin.force_free_pin(pin.PinId.gpio(v))
+        for v in RPiPinIdSet.valid_ids():
+            id = force_free_pin(pingroup.PinId.gpio(v))
             if (id!=None):
                 cleaned_up.append(id)
         if ( cleaned_up != [] ):
@@ -675,8 +675,8 @@ class PinWordWriterSystemTests(unittest.TestCase):
 class PinListWriterSystemTests(unittest.TestCase):
     def tearDown(self):
         cleaned_up = []
-        for v in pinid.RPiPinIdSet.valid_ids():
-            id = pin.force_free_pin(pin.PinId.gpio(v))
+        for v in RPiPinIdSet.valid_ids():
+            id = force_free_pin(pingroup.PinId.gpio(v))
             if (id!=None):
                 cleaned_up.append(id)
         if ( cleaned_up != [] ):
@@ -792,8 +792,8 @@ class PinListWriterSystemTests(unittest.TestCase):
 class XPinGroupIOSystemTests(unittest.TestCase):
     def tearDown(self):
         cleaned_up = []
-        for v in pinid.RPiPinIdSet.valid_ids():
-            id = pin.force_free_pin(pin.PinId.gpio(v))
+        for v in RPiPinIdSet.valid_ids():
+            id = force_free_pin(pingroup.PinId.gpio(v))
             if (id!=None):
                 cleaned_up.append(id)
         if ( cleaned_up != [] ):
@@ -801,9 +801,9 @@ class XPinGroupIOSystemTests(unittest.TestCase):
         self.assertEqual(cleaned_up,[])
 
     def test_00100_write_0_to_7_and_down_again_to_gen_gpio0_to_2(self):
-        a_pin_group = pingroup.open_pingroup( [ pin.PinId.p1_gpio_gen0()\
-                                              , pin.PinId.p1_gpio_gen1()\
-                                              , pin.PinId.p1_gpio_gen2()\
+        a_pin_group = pingroup.open_pingroup( [ pingroup.PinId.p1_gpio_gen0()\
+                                              , pingroup.PinId.p1_gpio_gen1()\
+                                              , pingroup.PinId.p1_gpio_gen2()\
                                               ]\
                                             , 'w')
         self.assertIsInstance(a_pin_group,pingroup.PinWordWriter)
@@ -815,10 +815,10 @@ class XPinGroupIOSystemTests(unittest.TestCase):
             a_pin_group.write(i)
 
     def test_00150_time_writes_0_to_15_on_gen_gpio0_to_3(self):
-        a_pin_group = pingroup.open_pingroup( [ pin.PinId.p1_gpio_gen0()\
-                                              , pin.PinId.p1_gpio_gen1()\
-                                              , pin.PinId.p1_gpio_gen2()\
-                                              , pin.PinId.p1_gpio_gen3()\
+        a_pin_group = pingroup.open_pingroup( [ pingroup.PinId.p1_gpio_gen0()\
+                                              , pingroup.PinId.p1_gpio_gen1()\
+                                              , pingroup.PinId.p1_gpio_gen2()\
+                                              , pingroup.PinId.p1_gpio_gen3()\
                                               ]\
                                             , 'w')
         self.assertIsInstance(a_pin_group,pingroup.PinWordWriter)
@@ -834,9 +834,9 @@ class XPinGroupIOSystemTests(unittest.TestCase):
         print ITERATIONS, "* 0..15 GPIO pin group writes took:", now - then, "seconds."
 
     def test_01100_write_F_F_F_to_T_T_T_and_down_again_to_gen_gpio0_to_2(self):
-        a_pin_group = pingroup.open_pingroup( [ pin.PinId.p1_gpio_gen0()\
-                                              , pin.PinId.p1_gpio_gen1()\
-                                              , pin.PinId.p1_gpio_gen2()\
+        a_pin_group = pingroup.open_pingroup( [ pingroup.PinId.p1_gpio_gen0()\
+                                              , pingroup.PinId.p1_gpio_gen1()\
+                                              , pingroup.PinId.p1_gpio_gen2()\
                                               ]\
                                             , 'wS')
         self.assertIsInstance(a_pin_group,pingroup.PinListWriter)
@@ -857,10 +857,10 @@ class XPinGroupIOSystemTests(unittest.TestCase):
             a_pin_group.write(i)
 
     def test_01150_time_writes_F_F_F_F_to_T_T_T_T_on_gen_gpio0_to_3(self):
-        a_pin_group = pingroup.open_pingroup( [ pin.PinId.p1_gpio_gen0()\
-                                              , pin.PinId.p1_gpio_gen1()\
-                                              , pin.PinId.p1_gpio_gen2()\
-                                              , pin.PinId.p1_gpio_gen3()\
+        a_pin_group = pingroup.open_pingroup( [ pingroup.PinId.p1_gpio_gen0()\
+                                              , pingroup.PinId.p1_gpio_gen1()\
+                                              , pingroup.PinId.p1_gpio_gen2()\
+                                              , pingroup.PinId.p1_gpio_gen3()\
                                               ]\
                                             , 'wS')
         self.assertIsInstance(a_pin_group,pingroup.PinListWriter)
@@ -893,8 +893,8 @@ class XPinGroupIOSystemTests(unittest.TestCase):
         print ITERATIONS, "* F,F,F,F..T,T,T,T GPIO pin group writes took:", now - then, "seconds."
 
     def test_02100_read_word_from_gpio_gen6_and_gpio_gclk(self):
-        a_pin_group = pingroup.open_pingroup( [ pin.PinId.p1_gpio_gen6()\
-                                              , pin.PinId.p1_gpio_gclk()\
+        a_pin_group = pingroup.open_pingroup( [ pingroup.PinId.p1_gpio_gen6()\
+                                              , pingroup.PinId.p1_gpio_gclk()\
                                               ]\
                                             , 'r')
         self.assertIsInstance(a_pin_group,pingroup.PinWordReader)
@@ -912,8 +912,8 @@ class XPinGroupIOSystemTests(unittest.TestCase):
         self.assertEquals(a_pin_group.read(), 3)
 
     def test_03100_read_sequence_from_gpio_gen6_and_gpio_gclk(self):
-        a_pin_group = pingroup.open_pingroup( [ pin.PinId.p1_gpio_gen6()\
-                                              , pin.PinId.p1_gpio_gclk()\
+        a_pin_group = pingroup.open_pingroup( [ pingroup.PinId.p1_gpio_gen6()\
+                                              , pingroup.PinId.p1_gpio_gclk()\
                                               ]\
                                             , 'rS')
         self.assertIsInstance(a_pin_group,pingroup.PinListReader)
@@ -931,8 +931,8 @@ class XPinGroupIOSystemTests(unittest.TestCase):
         self.assertEquals(a_pin_group.read(), [True,True])
 
     def test_04100_poll_blocking_read_word_from_gpio_gen6_and_gpio_gclk(self):
-        a_pin_group = pingroup.open_pingroup( [ pin.PinId.p1_gpio_gen6()\
-                                              , pin.PinId.p1_gpio_gclk()\
+        a_pin_group = pingroup.open_pingroup( [ pingroup.PinId.p1_gpio_gen6()\
+                                              , pingroup.PinId.p1_gpio_gclk()\
                                               ]\
                                             , 'rB')
         self.assertIsInstance(a_pin_group,pingroup.PinWordBlockingReader)
@@ -950,8 +950,8 @@ class XPinGroupIOSystemTests(unittest.TestCase):
         self.assertEquals(a_pin_group.read(0), 3)
 
     def test_04150_blocking_both_read_word_from_gpio_gen6_and_gpio_gclk(self):
-        a_pin_group = pingroup.open_pingroup( [ pin.PinId.p1_gpio_gen6()\
-                                              , pin.PinId.p1_gpio_gclk()\
+        a_pin_group = pingroup.open_pingroup( [ pingroup.PinId.p1_gpio_gen6()\
+                                              , pingroup.PinId.p1_gpio_gclk()\
                                               ]\
                                             , 'rB')
         self.assertIsInstance(a_pin_group,pingroup.PinWordBlockingReader)
@@ -967,8 +967,8 @@ class XPinGroupIOSystemTests(unittest.TestCase):
         self.assertEquals(a_pin_group.read(), 2)
 
     def test_04200_blocking_rising_read_word_from_gpio_gen6_and_gpio_gclk(self):
-        a_pin_group = pingroup.open_pingroup( [ pin.PinId.p1_gpio_gen6()\
-                                              , pin.PinId.p1_gpio_gclk()\
+        a_pin_group = pingroup.open_pingroup( [ pingroup.PinId.p1_gpio_gen6()\
+                                              , pingroup.PinId.p1_gpio_gclk()\
                                               ]\
                                             , 'rR')
         self.assertIsInstance(a_pin_group,pingroup.PinWordBlockingReader)
@@ -983,8 +983,8 @@ class XPinGroupIOSystemTests(unittest.TestCase):
         self.assertEquals(a_pin_group.read(0), 0)
  
     def test_04250_blocking_rising_read_word_from_gpio_gen6_and_gpio_gclk(self):
-        a_pin_group = pingroup.open_pingroup( [ pin.PinId.p1_gpio_gen6()\
-                                              , pin.PinId.p1_gpio_gclk()\
+        a_pin_group = pingroup.open_pingroup( [ pingroup.PinId.p1_gpio_gen6()\
+                                              , pingroup.PinId.p1_gpio_gclk()\
                                               ]\
                                             , 'rF')
         self.assertIsInstance(a_pin_group,pingroup.PinWordBlockingReader)
@@ -1000,8 +1000,8 @@ class XPinGroupIOSystemTests(unittest.TestCase):
         print "\nMake P1 pin GPIO_GEN6  LOW  and GPIO_GCLK  LOW..."
 
     def test_05100_poll_blocking_read_list_from_gpio_gen6_and_gpio_gclk(self):
-        a_pin_group = pingroup.open_pingroup( [ pin.PinId.p1_gpio_gen6()\
-                                              , pin.PinId.p1_gpio_gclk()\
+        a_pin_group = pingroup.open_pingroup( [ pingroup.PinId.p1_gpio_gen6()\
+                                              , pingroup.PinId.p1_gpio_gclk()\
                                               ]\
                                             , 'rBS')
         self.assertIsInstance(a_pin_group,pingroup.PinListBlockingReader)
@@ -1019,8 +1019,8 @@ class XPinGroupIOSystemTests(unittest.TestCase):
         self.assertEquals(a_pin_group.read(0), [True,True])
 
     def test_05150_blocking_both_read_word_list_gpio_gen6_and_gpio_gclk(self):
-        a_pin_group = pingroup.open_pingroup( [ pin.PinId.p1_gpio_gen6()\
-                                              , pin.PinId.p1_gpio_gclk()\
+        a_pin_group = pingroup.open_pingroup( [ pingroup.PinId.p1_gpio_gen6()\
+                                              , pingroup.PinId.p1_gpio_gclk()\
                                               ]\
                                             , 'rBS')
         self.assertIsInstance(a_pin_group,pingroup.PinListBlockingReader)
@@ -1035,8 +1035,8 @@ class XPinGroupIOSystemTests(unittest.TestCase):
         self.assertEquals(a_pin_group.read(), [False,True])
 
     def test_05200_blocking_rising_read_list_from_gpio_gen6_and_gpio_gclk(self):
-        a_pin_group = pingroup.open_pingroup( [ pin.PinId.p1_gpio_gen6()\
-                                              , pin.PinId.p1_gpio_gclk()\
+        a_pin_group = pingroup.open_pingroup( [ pingroup.PinId.p1_gpio_gen6()\
+                                              , pingroup.PinId.p1_gpio_gclk()\
                                               ]\
                                             , 'rRS')
         self.assertIsInstance(a_pin_group,pingroup.PinListBlockingReader)
@@ -1051,8 +1051,8 @@ class XPinGroupIOSystemTests(unittest.TestCase):
         self.assertEquals(a_pin_group.read(0), [False,False])
 
     def test_05250_blocking_rising_read_list_from_gpio_gen6_and_gpio_gclk(self):
-        a_pin_group = pingroup.open_pingroup( [ pin.PinId.p1_gpio_gen6()\
-                                              , pin.PinId.p1_gpio_gclk()\
+        a_pin_group = pingroup.open_pingroup( [ pingroup.PinId.p1_gpio_gen6()\
+                                              , pingroup.PinId.p1_gpio_gclk()\
                                               ]\
                                             , 'rFS')
         self.assertIsInstance(a_pin_group,pingroup.PinListBlockingReader)
