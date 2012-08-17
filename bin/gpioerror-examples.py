@@ -2,7 +2,8 @@
 '''
     Example uses of the dibase.rpi.gpio package modules.
 
-    Shows examples of raising and handling gpioerror exceptions.
+    Shows examples of raising and handling gpioerror exceptions
+    that shows the message string representation for each exception.
 
     Developed by R.E. McArdell / Dibase Limited.
     Copyright (c) 2012 Dibase Limited
@@ -50,6 +51,24 @@ def raise_pindirectionmodeinvaliderror():
     except error.GPIOError,e:
         print e.__class__.__name__,':', e
 
+def raise_pingroupopenmodeinvaliderror():
+    try:
+        raise error.PinGroupOpenModeInvalidError
+    except error.GPIOError,e:
+        print e.__class__.__name__,':', e
+
+def raise_pingroupformatmodeinvaliderror():
+    try:
+        raise error.PinGroupFormatModeInvalidError
+    except error.GPIOError,e:
+        print e.__class__.__name__,':', e
+
+def raise_pingroupidsinvaliderror():
+    try:
+        raise error.PinGroupIdsInvalidError
+    except error.GPIOError,e:
+        print e.__class__.__name__,':', e
+
 if __name__ == '__main__':
     print "------------------------------------------------------------------"
     raise_gpioerror()
@@ -63,5 +82,11 @@ if __name__ == '__main__':
     raise_pinblockmodeinvaliderror()
     print "------------------------------------------------------------------"
     raise_pindirectionmodeinvaliderror()
+    print "------------------------------------------------------------------"
+    raise_pingroupopenmodeinvaliderror()
+    print "------------------------------------------------------------------"
+    raise_pingroupformatmodeinvaliderror()
+    print "------------------------------------------------------------------"
+    raise_pingroupidsinvaliderror()
     print "------------------------------------------------------------------"
 
