@@ -36,7 +36,7 @@ if __name__ == '__main__':
             out_pin.write('0')      # Set GPIO line on pin p1_gpio_gen1 LOW
             time.sleep(0.2)
 
-    except error.GPIOError:
+    except error.GPIOError, e:
         print "Oops unexpected GPIO related error:",\
                 e.__class__.__name__,':', e
     except ValueError:

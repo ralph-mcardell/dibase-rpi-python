@@ -77,7 +77,7 @@ def wait_on_both_GPIO_GCLK_with_timeouts():
         else:
             print "Value read:", value
 
-        print "Waiting for 1000s for state change on P1 GPIO_GCLK, timeout less probable..."
+        print "Waiting for 10000s for state change on P1 GPIO_GCLK, timeout less probable..."
         value = in_pin.read( 10000 )
 
         if value==None:
@@ -97,7 +97,7 @@ if __name__ == '__main__':
         wait_on_both_GPIO_GCLK_no_timeout()
         time.sleep( INTERVAL )
         wait_on_both_GPIO_GCLK_with_timeouts()
-    except error.GPIOError:
+    except error.GPIOError, e:
         print "Oops unexpected GPIO related error:",\
                 e.__class__.__name__,':', e
     except ValueError:
