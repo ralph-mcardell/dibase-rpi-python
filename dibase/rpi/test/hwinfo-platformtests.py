@@ -11,8 +11,8 @@
 import unittest
 import sys
 if __name__ == '__main__':
-    sys.path.insert(0, './../..')
-from rpi.hwinfo import HwInfo
+    sys.path.insert(0, './../../..')
+from dibase.rpi.hwinfo import HwInfo
 
 class HwInfoPlatformTests(unittest.TestCase):
     def test_0010_hw_info_raw_revision_returns_int_value_greater_than_zero(self):

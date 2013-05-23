@@ -14,9 +14,9 @@
 import unittest
 import sys
 if __name__ == '__main__':
-    sys.path.insert(0, './../..')
-from gpio import pingroup
-
+# Add path to directory containing the dibase package directory
+    sys.path.insert(0, './../../../..') 
+from dibase.rpi.gpio import pingroup
 
 class FormatModeUnitTests(unittest.TestCase):
     def test_integer_open_mode_is_valid(self):

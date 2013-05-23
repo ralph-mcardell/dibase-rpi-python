@@ -2,8 +2,9 @@ import unittest
 import os.path as osp
 import sys
 if __name__ == '__main__':
-    sys.path.insert(0, './../..')
-from gpio import sysfspaths as sysfs
+# Add path to directory containing the dibase package directory
+    sys.path.insert(0, './../../../..') 
+from dibase.rpi.gpio import sysfspaths as sysfs
 
 class PinPathsTestCases(unittest.TestCase):
     def test_export_path(self):

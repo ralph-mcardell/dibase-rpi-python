@@ -14,8 +14,9 @@
 import unittest
 import sys
 if __name__ == '__main__':
-    sys.path.insert(0, './../..')
-from gpio import pin
+# Add path to directory containing the dibase package directory
+    sys.path.insert(0, './../../../..') 
+from dibase.rpi.gpio import pin
 
 class BlockModeUnitTests(unittest.TestCase):
     def test_non_blocking_open_mode_to_edge_mode_mapping(self):

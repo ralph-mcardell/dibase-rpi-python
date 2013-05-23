@@ -19,11 +19,12 @@ import time
 import unittest
 import sys
 if __name__ == '__main__':
-    sys.path.insert(0, './../..')
-from gpio import pingroup
-from gpio.pin import force_free_pin
-from gpio.pinid import RPiPinIdSet
-from gpio import gpioerror as error
+# Add path to directory containing the dibase package directory
+    sys.path.insert(0, './../../../..') 
+from dibase.rpi.gpio import pingroup
+from dibase.rpi.gpio.pin import force_free_pin
+from dibase.rpi.gpio.pinid import RPiPinIdSet
+from dibase.rpi.gpio import gpioerror as error
 
 class OpenPinGroupFunctionSystemTests(unittest.TestCase):
     def tearDown(self):

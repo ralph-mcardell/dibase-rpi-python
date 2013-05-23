@@ -18,10 +18,11 @@ import time
 import unittest
 import sys
 if __name__ == '__main__':
-    sys.path.insert(0, './../..')
-from gpio import pin
-from gpio import pinid
-from gpio import gpioerror as error
+# Add path to directory containing the dibase package directory
+    sys.path.insert(0, './../../../..') 
+from dibase.rpi.gpio import pin
+from dibase.rpi.gpio import pinid
+from dibase.rpi.gpio import gpioerror as error
 
 class PinWriterSystemTests(unittest.TestCase):
     def tearDown(self):
