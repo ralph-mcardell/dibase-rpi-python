@@ -24,6 +24,8 @@
     License: dual: GPL or BSD.
 '''
 from gpioerror import PinIdInvalidError
+from gpioerror import PinIdInvalidRevisionError
+from .. import hwinfo
 
 class PinIdValidator(object):
     '''
@@ -69,30 +71,57 @@ class RPiPinIdSet(object):
         Provides validation and pin mapping facilities for the set of pin
         ids for GPIO lines connected to the Raspberry Pi P1 connector.
     '''
-    __RPI_P1_PIN_TO_IDS = ( None, None, None,    0, None,    1, None,    4,   14
-                          , None,   15,   17,   18,   21, None,   22,   23, None
-                          ,   24,   10, None,    9,   25,   11,    8, None,    7
+    __RPI_P1_PIN_TO_IDS = ( # Raspberry Pi revision 1 P1 pins GPIO pins
+                            (None,None,None,   0,None,   1,None,   4,  14
+                            ,None,  15,  17,  18,  21,None,  22,  23,None
+                            ,  24,  10,None,   9,  25,  11,   8,None,   7
+                            )
+                          , # Raspberry Pi revision 2 P1 pins GPIO pins
+                            (None,None,None,   2,None,   3,None,   4,  14
+                            ,None,  15,  17,  18,  27,None,  22,  23,None
+                            ,  24,  10,None,   9,  25,  11,   8,None,   7
+                            )                           
                           )
-    __RPI_IDS = frozenset( set(__RPI_P1_PIN_TO_IDS) - frozenset([None]) )
+    __RPI_P5_PIN_TO_IDS = ( # Raspberry Pi revision 1 P5 pins GPIO pins
+                            ( None,None,None,None,None,None,None,None,None)
+                          , # Raspberry Pi revision 2 P5 pins GPIO pins
+                            (None,None,None,  28,  29,  30,  31,None,None)
+                          )
+
+    __RPI_IDS = ( # Raspberry Pi revision 1 P1 and P5 pins
+                  frozenset( ( set(__RPI_P1_PIN_TO_IDS[0])
+                             | set(__RPI_P5_PIN_TO_IDS[0])
+                             ) - frozenset([None]) 
+                           )
+                , # Raspberry Pi revision 2 P1 and P5 pins
+                  frozenset( ( set(__RPI_P1_PIN_TO_IDS[1]) 
+                             | set(__RPI_P5_PIN_TO_IDS[1]) 
+                             ) - frozenset([None]) 
+                           )
+                )
 
     @classmethod
-    def validator( cls ):
+    def validator( cls, rev_idx ):
         '''
             Returns a PinIdValidator instance for the Raspberry Pi P1 connector
             GPIO pin id value set.
-        '''
-        return PinIdValidator( RPiPinIdSet.valid_ids() )
+            rev_idx is the Raspberry Pi board revision index (zero based value
+            that is one less than the major board revision value)
+       '''
+        return PinIdValidator( RPiPinIdSet.valid_ids(rev_idx) )
 
     @classmethod
-    def valid_ids( cls ):
+    def valid_ids( cls, rev_idx ):
         '''
             Returns set of GPIO pin ids for GPIO lines connected to the
             Raspberry Pi P1 connector.
+            rev_idx is the Raspberry Pi board revision index (zero based value
+            that is one less than the major board revision value)
         '''
-        return RPiPinIdSet.__RPI_IDS
+        return RPiPinIdSet.__RPI_IDS[rev_idx]
 
     @classmethod
-    def p1_pin_to_gpio_pin_id( cls, p1_pin_number ):
+    def p1_pin_to_gpio_pin_id( cls, p1_pin_number, rev_idx ):
         '''
             Returns the GPIO pin id value assigned to a Raspberry Pi P1
             connector pin. 
@@ -100,6 +129,9 @@ class RPiPinIdSet(object):
             p1_pin_number is a Raspberry Pi P1 connector pin number in the
             range [1, 26].
             
+            rev_idx is the Raspberry Pi board revision index (zero based value
+            that is one less than the major board revision value)
+
             Note that not all P1 connector pins have an associated GPIO pin
             id - these P1 pin numbers will return None. If an out of range
             or non integer value is passed then None is returned.  
@@ -107,21 +139,60 @@ class RPiPinIdSet(object):
         try:
             p1_pin_number = int(p1_pin_number)
             if ( p1_pin_number not in
-                    range(0,len(RPiPinIdSet.__RPI_P1_PIN_TO_IDS)) ):
+                    range(0,len(RPiPinIdSet.__RPI_P1_PIN_TO_IDS[rev_idx])) ):
                 return None
         except StandardError:
             return None
-        return RPiPinIdSet.__RPI_P1_PIN_TO_IDS[p1_pin_number]
+        return RPiPinIdSet.__RPI_P1_PIN_TO_IDS[rev_idx][p1_pin_number]
 
     @classmethod
-    def p1_pin_to_gpio_pin_id_tuple( cls ):
+    def p5_pin_to_gpio_pin_id( cls, p5_pin_number, rev_idx ):
+        '''
+            Returns the GPIO pin id value assigned to a Raspberry Pi P5
+            connector pin. 
+
+            p5_pin_number is a Raspberry Pi P1 connector pin number in the
+            range [1, 8].
+            
+            rev_idx is the Raspberry Pi board revision index (zero based value
+            that is one less than the major board revision value)
+
+            Note that not all P5 connector pins have an associated GPIO pin
+            id - these P5 pin numbers will return None. If an out of range
+            or non integer value is passed then None is returned.  
+        '''
+        try:
+            p5_pin_number = int(p5_pin_number)
+            if ( p5_pin_number not in
+                    range(0,len(RPiPinIdSet.__RPI_P5_PIN_TO_IDS[rev_idx])) ):
+                return None
+        except StandardError:
+            return None
+        return RPiPinIdSet.__RPI_P5_PIN_TO_IDS[rev_idx][p5_pin_number]
+
+    @classmethod
+    def p1_pin_to_gpio_pin_id_tuple( cls, rev_idx ):
         '''
             Returns tuple used to map Raspberry Pi P1 connector pins numbers
             as index into the tuple to GPIO pin id element values. Not all P1
             pins are connected to GPIO pins - these elements have a None value.
             Mostly for use by tests
+            rev_idx is the Raspberry Pi board revision index (zero based value
+            that is one less than the major board revision value)
         '''
-        return RPiPinIdSet.__RPI_P1_PIN_TO_IDS
+        return RPiPinIdSet.__RPI_P1_PIN_TO_IDS[rev_idx]
+
+    @classmethod
+    def p5_pin_to_gpio_pin_id_tuple( cls, rev_idx ):
+        '''
+            Returns tuple used to map Raspberry Pi P5 connector pins numbers
+            as index into the tuple to GPIO pin id element values. Not all P5
+            pins are connected to GPIO pins - these elements have a None value.
+            Mostly for use by tests
+            rev_idx is the Raspberry Pi board revision index (zero based value
+            that is one less than the major board revision value)
+        '''
+        return RPiPinIdSet.__RPI_P5_PIN_TO_IDS[rev_idx]
 
 class AllChipPinIdSet(object):
     '''
@@ -178,7 +249,7 @@ class PinId(int):
             Raspberry Pi P1 connector with the value id - which represents
             the pin id values used by the Linux sys filesystem GPIO support.
         '''
-        return PinId( pin_id, RPiPinIdSet.validator() )
+        return PinId( pin_id, RPiPinIdSet.validator(PinId._get_rpi_major_revision_index()) )
 
     @classmethod
     def any_chip_gpio( cls, pin_id ):
@@ -203,19 +274,39 @@ class PinId(int):
             numbers that are not connected to GPIO lines will raise a
             PinIdInvalidError.
         '''
-        pin_id = RPiPinIdSet.p1_pin_to_gpio_pin_id(pin)
+        pin_id = RPiPinIdSet.p1_pin_to_gpio_pin_id(pin,PinId._get_rpi_major_revision_index())
         if ( pin_id == None ):
             raise PinIdInvalidError
         return PinId.gpio(pin_id)
 
     @classmethod
-    def p1_sda0( cls ):
-        '''Return PinId instance representing Raspberry Pi P1 SDA0 pin '''
+    def p5_pin( cls, pin ):
+        '''
+            Create a sys filesystem GPIO pin id for the equivalent pin
+            number of the Raspberry Pi P5 8 pin header connector.
+            
+            pin is a Raspberry Pi P5 connector pin number in the range [1, 8].
+            Note that not all values in this range are valid as some P5 pins
+            are for other purposes or not to be used at all, and P5 only exists
+            on major revision 2 boards (and later?)
+            
+            Invalid pin values, either bad or out of range values or P5 pin
+            numbers that are not connected to GPIO lines will raise a
+            PinIdInvalidError.
+        '''
+        pin_id = RPiPinIdSet.p5_pin_to_gpio_pin_id(pin,PinId._get_rpi_major_revision_index())
+        if ( pin_id == None ):
+            raise PinIdInvalidError
+        return PinId.gpio(pin_id)
+
+    @classmethod
+    def p1_sda( cls ):
+        '''Return PinId instance representing Raspberry Pi P1 SDA pin '''
         return PinId.p1_pin( 3 )
 
     @classmethod
-    def p1_scl0( cls ):
-        '''Return PinId instance representing Raspberry Pi P1 SCL0 pin '''
+    def p1_scl( cls ):
+        '''Return PinId instance representing Raspberry Pi P1 SCL pin '''
         return PinId.p1_pin( 5 )
 
     @classmethod
@@ -224,12 +315,12 @@ class PinId(int):
         return PinId.p1_pin( 7 )
 
     @classmethod
-    def p1_txd0( cls ):
+    def p1_txd( cls ):
         '''Return PinId instance representing Raspberry Pi P1 TXD0 pin '''
         return PinId.p1_pin( 8 )
 
     @classmethod
-    def p1_rxd0( cls ):
+    def p1_rxd( cls ):
         '''Return PinId instance representing Raspberry Pi P1 RXD0 pin '''
         return PinId.p1_pin( 10 )
 
@@ -292,3 +383,55 @@ class PinId(int):
     def p1_spi_ce1_n( cls ):
         '''Return PinId instance representing Raspberry Pi P1 SPI_CE1_N pin '''
         return PinId.p1_pin( 26 )
+    
+    @classmethod
+    def p5_gpio_gen7( cls ):
+        '''Return PinId instance representing Raspberry Pi P5 GPIO_GEN7 pin '''
+        return PinId.p5_pin( 3 )
+    
+    @classmethod
+    def p5_gpio_gen8( cls ):
+        '''Return PinId instance representing Raspberry Pi P5 GPIO_GEN8 pin '''
+        return PinId.p5_pin( 4 )
+    
+    @classmethod
+    def p5_gpio_gen9( cls ):
+        '''Return PinId instance representing Raspberry Pi P5 GPIO_GEN9 pin '''
+        return PinId.p5_pin( 5 )
+    
+    @classmethod
+    def p5_gpio_gen10( cls ):
+        '''Return PinId instance representing Raspberry Pi P5 GPIO_GEN10 pin '''
+        return PinId.p5_pin( 6 )
+    
+    @classmethod
+    def _set_rpi_major_revision(cls, revision):
+      ''' Sets internal class attibute specifying the major Raspberry Pi
+          board revision. Note: exposed mainly for testing purposes.
+
+          Param   revision  Small positive value representing a Raspberry Pi
+                            board major revision number. As of May 2013
+                            values of 1 or 2 are valid
+      '''
+      if PinIdValidator({1,2})(revision):
+        PinId.__rpi_revision_index = revision - 1 # 0 based version of revision
+      else:
+        raise PinIdInvalidRevisionError()
+
+    @classmethod
+    def _get_rpi_major_revision_index(cls):
+      ''' Return the internal class attibute specifying the major Raspberry Pi
+          board revision as a 0 based index value. If this value is not set
+          then will attempt to set it by passing the result of 
+          dibase.rpi.hwinfo.HwInfo.major_revision() to
+          PinId._set_rpi_major_revision.
+
+          Returns Revision index, a small 0 based positive integer value
+                  representing a Raspberry Pi board major revision number. 
+                  As of May 2013 returned value may be 0 or 1.
+      '''
+      if PinId.__rpi_revision_index==None:
+        PinId._set_rpi_major_revision(hwinfo.HwInfo.major_revision())
+      return PinId.__rpi_revision_index
+
+    __rpi_revision_index = None

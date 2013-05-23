@@ -17,6 +17,10 @@ class PinIdInvalidError(GPIOError):
     """Invalid GPIO pin id value for this system"""
     pass
 
+class PinIdInvalidRevisionError(GPIOError):
+    """Invalid Raspberry Pi revision value - integer such as 1 or 2 expected"""
+    pass
+
 class PinInUseError(GPIOError):
     """Attempt to use a GPIO pin that is exported and maybe in use"""
     pass
