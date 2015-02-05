@@ -425,12 +425,10 @@ class PinBlockingReader(_PinIOBase, GPIOBlockingReaderBase):
         Concrete GPIOBlockingReaderBase implementation for a single GPIO pin.
         Handles reading single 0 or 1 values from the related GPIO pin, which
         will have been exported and set up for input as part of the
-        initialisation. Note that the read operation does not wait for a state
-        change of the pin - it returns the pin value of the first read after
-        reset was last called and so is only blocking in terms of IO operation
-        timing. To wait, call wait, which will return on one of the requested
-        pin state changes ('R':rising edge 0->1 transition,
-        'F':falling edge 1->0 transition, or 'B':both).
+        initialisation. The read operation waits until a requested pin state
+        change event ('R':rising edge 0->1 transition, 'F':falling edge 1->0
+        transition, or 'B':both) before readind and returning the pin value
+        or the operation times out.
     '''
 
     def __init__(self, pin_id, blocking_mode):

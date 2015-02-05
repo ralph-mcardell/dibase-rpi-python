@@ -543,9 +543,9 @@ def open_pingroup(pin_ids, mode='rNI'):
         block on events for both edges: 'B'.
         The default is 'N', non-blocking, waiting on no events and is the
         only valid option when opening a pin for writing/output.
-        The third optioanl character specifies the format of pin values in
-        the group as present to write or returned from read operations.
-        I indicates they values are multiplexed into the bits of an integer
+        The third optional character specifies the format of pin values in
+        the group as presented to write or returned from read operations.
+        I indicates the values are multiplexed into the bits of an integer
         word with bit 0 having the value of the GPIO pin specified by the
         first id in the passed pin_ids sequence, bit 1 the values of the pin
         specified by the next pin id in the passed pin_ids sequence.
